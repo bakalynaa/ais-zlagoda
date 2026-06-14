@@ -1,17 +1,27 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { getCategories, createCategory, deleteCategory } from '../api/categories';
+import { getCategories, createCategory, deleteCategory, updateCategory } from '../api/categories';
 
 interface Category {
   category_number: number;
   category_name: string;
 }
 
+const field = (label: string, children: React.ReactNode) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    {children}
+  </div>
+);
+
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [error, setError] = useState('');
 
   const fetchCategories = () => {
     getCategories()
@@ -45,14 +55,34 @@ export default function CategoriesPage() {
     }
   };
 
+  const handleEdit = (c: Category) => {
+    setEditId(c.category_number);
+    setEditName(c.category_name);
+  };
+
+  const handleUpdate = async () => {
+    if (!editId || !editName.trim()) return;
+    try {
+      await updateCategory(editId, { category_name: editName });
+      setEditId(null);
+      setEditName('');
+      fetchCategories();
+    } catch (err: any) {
+      setError('Помилка при оновленні');
+    }
+  };
+
+  const inputStyle = { padding: '0.5rem', width: '100%' };
+
   return (
     <Layout>
       <h1>Категорії</h1>
-      <button onClick={() => setShowForm(!showForm)}>
+      <button onClick={() => setShowForm(!showForm)} style={{ marginBottom: '1rem' }}>
         {showForm ? 'Скасувати' : '+ Додати категорію'}
       </button>
+
       {showForm && (
-        <div style={{ margin: '1rem 0' }}>
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
           <input
             type="text"
             placeholder="Назва категорії"
@@ -63,6 +93,9 @@ export default function CategoriesPage() {
           <button onClick={handleCreate}>Зберегти</button>
         </div>
       )}
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
       {loading ? (
         <p>Завантаження...</p>
       ) : (
@@ -78,11 +111,29 @@ export default function CategoriesPage() {
             {categories.map((c) => (
               <tr key={c.category_number}>
                 <td>{c.category_number}</td>
-                <td>{c.category_name}</td>
                 <td>
-                  <button onClick={() => handleDelete(c.category_number)}>
-                    Видалити
-                  </button>
+                  {editId === c.category_number ? (
+                    <input
+                      style={{ ...inputStyle, width: '200px' }}
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                    />
+                  ) : (
+                    c.category_name
+                  )}
+                </td>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  {editId === c.category_number ? (
+                    <>
+                      <button onClick={handleUpdate}>Зберегти</button>
+                      <button onClick={() => { setEditId(null); setEditName(''); }}>Скасувати</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => handleEdit(c)}>Редагувати</button>
+                      <button onClick={() => handleDelete(c.category_number)}>Видалити</button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
