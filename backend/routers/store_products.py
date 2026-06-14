@@ -67,7 +67,7 @@ def get_promotional(sort: str = "count", user=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute(
         f"""SELECT sp.UPC, sp.UPC_prom, sp.selling_price, sp.products_number,
-                   p.product_name, p.manufacturer, p.characteristics
+                   sp.promotional_product, p.product_name, p.manufacturer, p.characteristics
             FROM Store_Product sp
             JOIN Product p ON sp.id_product = p.id_product
             WHERE sp.promotional_product = true
@@ -85,7 +85,7 @@ def get_non_promotional(sort: str = "count", user=Depends(get_current_user)):
     cur = conn.cursor()
     cur.execute(
         f"""SELECT sp.UPC, sp.UPC_prom, sp.selling_price, sp.products_number,
-                   p.product_name, p.manufacturer, p.characteristics
+                   sp.promotional_product, p.product_name, p.manufacturer, p.characteristics
             FROM Store_Product sp
             JOIN Product p ON sp.id_product = p.id_product
             WHERE sp.promotional_product = false
