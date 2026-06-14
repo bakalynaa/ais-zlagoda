@@ -34,9 +34,11 @@ const emptyForm = {
   password: '',
 };
 
-const field = (label: string, children: React.ReactNode) => (
+const field = (label: string, children: React.ReactNode, required = false) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>
+      {label}{required && <span style={{ color: 'red' }}> *</span>}
+    </label>
     {children}
   </div>
 );
@@ -49,6 +51,7 @@ export default function EmployeesPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const fetchEmployees = () => {
     getEmployees()
@@ -102,6 +105,7 @@ export default function EmployeesPage() {
     });
     setShowForm(true);
     setError('');
+    setTouched({});
   };
 
   const handleCancel = () => {
@@ -109,9 +113,30 @@ export default function EmployeesPage() {
     setEditId(null);
     setForm(emptyForm);
     setError('');
+    setTouched({});
   };
 
+  const requiredFields = editId
+    ? ['empl_surname', 'empl_name', 'salary', 'date_of_birth', 'date_of_start', 'phone_number', 'city', 'street', 'zip_code']
+    : ['id_employee', 'empl_surname', 'empl_name', 'salary', 'date_of_birth', 'date_of_start', 'phone_number', 'city', 'street', 'zip_code', 'password'];
+
+  const isInvalid = (f: string) => touched[f] && requiredFields.includes(f) && !form[f as keyof typeof form];
+
+  const inputStyle = (f: string) => ({
+    padding: '0.5rem',
+    width: '100%',
+    border: isInvalid(f) ? '1px solid red' : '1px solid #ccc',
+    borderRadius: '4px',
+  });
+
   const handleSubmit = async () => {
+    const allTouched = Object.fromEntries(requiredFields.map(f => [f, true]));
+    setTouched(allTouched);
+    const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
+    if (hasEmpty) {
+      setError("Заповніть всі обов'язкові поля!");
+      return;
+    }
     setError('');
     try {
       if (editId) {
@@ -146,8 +171,6 @@ export default function EmployeesPage() {
     }
   };
 
-  const inputStyle = { padding: '0.5rem', width: '100%' };
-
   return (
     <Layout>
       <h1>Працівники</h1>
@@ -159,7 +182,7 @@ export default function EmployeesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
           {showForm && !editId ? 'Скасувати' : '+ Додати працівника'}
         </button>
       </div>
@@ -168,22 +191,22 @@ export default function EmployeesPage() {
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
           <h3>{editId ? 'Редагувати працівника' : 'Новий працівник'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {!editId && field('ID працівника', <input style={inputStyle} value={form.id_employee} onChange={e => setForm({...form, id_employee: e.target.value})} />)}
-            {field('Прізвище', <input style={inputStyle} value={form.empl_surname} onChange={e => setForm({...form, empl_surname: e.target.value})} />)}
-            {field("Ім'я", <input style={inputStyle} value={form.empl_name} onChange={e => setForm({...form, empl_name: e.target.value})} />)}
-            {field('По батькові', <input style={inputStyle} value={form.empl_patronymic} onChange={e => setForm({...form, empl_patronymic: e.target.value})} />)}
-            {field('Роль', <select style={inputStyle} value={form.empl_role} onChange={e => setForm({...form, empl_role: e.target.value})}>
+            {!editId && field('ID працівника', <input style={inputStyle('id_employee')} value={form.id_employee} onChange={e => setForm({...form, id_employee: e.target.value})} />, true)}
+            {field('Прізвище', <input style={inputStyle('empl_surname')} value={form.empl_surname} onChange={e => setForm({...form, empl_surname: e.target.value})} />, true)}
+            {field("Ім'я", <input style={inputStyle('empl_name')} value={form.empl_name} onChange={e => setForm({...form, empl_name: e.target.value})} />, true)}
+            {field('По батькові', <input style={inputStyle('empl_patronymic')} value={form.empl_patronymic} onChange={e => setForm({...form, empl_patronymic: e.target.value})} />)}
+            {field('Роль', <select style={inputStyle('empl_role')} value={form.empl_role} onChange={e => setForm({...form, empl_role: e.target.value})}>
               <option value="Cashier">Касир</option>
               <option value="Manager">Менеджер</option>
-            </select>)}
-            {field('Зарплата', <input style={inputStyle} type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} />)}
-            {field('Дата народження', <input style={inputStyle} type="date" value={form.date_of_birth} onChange={e => setForm({...form, date_of_birth: e.target.value})} />)}
-            {field('Дата початку роботи', <input style={inputStyle} type="date" value={form.date_of_start} onChange={e => setForm({...form, date_of_start: e.target.value})} />)}
-            {field('Телефон', <input style={inputStyle} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />)}
-            {field('Місто', <CityInput style={inputStyle} value={form.city} onChange={val => setForm({...form, city: val})} />)}
-            {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
-            {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
-            {!editId && field('Пароль', <input style={inputStyle} type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />)}
+            </select>, true)}
+            {field('Зарплата', <input style={inputStyle('salary')} type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} />, true)}
+            {field('Дата народження', <input style={inputStyle('date_of_birth')} type="date" value={form.date_of_birth} onChange={e => setForm({...form, date_of_birth: e.target.value})} />, true)}
+            {field('Дата початку роботи', <input style={inputStyle('date_of_start')} type="date" value={form.date_of_start} onChange={e => setForm({...form, date_of_start: e.target.value})} />, true)}
+            {field('Телефон', <input style={inputStyle('phone_number')} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />, true)}
+            {field('Місто', <CityInput style={inputStyle('city')} value={form.city} onChange={val => setForm({...form, city: val})} />, true)}
+            {field('Вулиця', <input style={inputStyle('street')} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />, true)}
+            {field('Індекс', <input style={inputStyle('zip_code')} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />, true)}
+            {!editId && field('Пароль', <input style={inputStyle('password')} type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />, true)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>

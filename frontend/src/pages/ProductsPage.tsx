@@ -24,9 +24,11 @@ const emptyForm = {
   characteristics: '',
 };
 
-const field = (label: string, children: React.ReactNode) => (
+const field = (label: string, children: React.ReactNode, required = false) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>
+      {label}{required && <span style={{ color: 'red' }}> *</span>}
+    </label>
     {children}
   </div>
 );
@@ -40,6 +42,7 @@ export default function ProductsPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const fetchProducts = () => {
     getProducts()
@@ -92,6 +95,7 @@ export default function ProductsPage() {
     });
     setShowForm(true);
     setError('');
+    setTouched({});
   };
 
   const handleCancel = () => {
@@ -99,9 +103,28 @@ export default function ProductsPage() {
     setEditId(null);
     setForm(emptyForm);
     setError('');
+    setTouched({});
   };
 
+  const requiredFields = ['category_number', 'product_name', 'manufacturer', 'characteristics'];
+
+  const isInvalid = (f: string) => touched[f] && requiredFields.includes(f) && !form[f as keyof typeof form];
+
+  const inputStyle = (f: string) => ({
+    padding: '0.5rem',
+    width: '100%',
+    border: isInvalid(f) ? '1px solid red' : '1px solid #ccc',
+    borderRadius: '4px',
+  });
+
   const handleSubmit = async () => {
+    const allTouched = Object.fromEntries(requiredFields.map(f => [f, true]));
+    setTouched(allTouched);
+    const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
+    if (hasEmpty) {
+      setError("Заповніть всі обов'язкові поля");
+      return;
+    }
     setError('');
     try {
       if (editId) {
@@ -129,8 +152,6 @@ export default function ProductsPage() {
     }
   };
 
-  const inputStyle = { padding: '0.5rem', width: '100%' };
-
   return (
     <Layout>
       <h1>Товари</h1>
@@ -142,7 +163,7 @@ export default function ProductsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
           {showForm && !editId ? 'Скасувати' : '+ Додати товар'}
         </button>
       </div>
@@ -152,16 +173,16 @@ export default function ProductsPage() {
           <h3>{editId ? 'Редагувати товар' : 'Новий товар'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             {field('Категорія', (
-              <select style={inputStyle} value={form.category_number} onChange={e => setForm({...form, category_number: e.target.value})}>
+              <select style={inputStyle('category_number')} value={form.category_number} onChange={e => setForm({...form, category_number: e.target.value})}>
                 <option value="">— Оберіть категорію —</option>
                 {categories.map(c => (
                   <option key={c.category_number} value={c.category_number}>{c.category_name}</option>
                 ))}
               </select>
-            ))}
-            {field('Назва', <input style={inputStyle} value={form.product_name} onChange={e => setForm({...form, product_name: e.target.value})} />)}
-            {field('Виробник', <input style={inputStyle} value={form.manufacturer} onChange={e => setForm({...form, manufacturer: e.target.value})} />)}
-            {field('Характеристики', <input style={inputStyle} value={form.characteristics} onChange={e => setForm({...form, characteristics: e.target.value})} />)}
+            ), true)}
+            {field('Назва', <input style={inputStyle('product_name')} value={form.product_name} onChange={e => setForm({...form, product_name: e.target.value})} />, true)}
+            {field('Виробник', <input style={inputStyle('manufacturer')} value={form.manufacturer} onChange={e => setForm({...form, manufacturer: e.target.value})} />, true)}
+            {field('Характеристики', <input style={inputStyle('characteristics')} value={form.characteristics} onChange={e => setForm({...form, characteristics: e.target.value})} />, true)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
