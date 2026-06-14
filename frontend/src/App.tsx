@@ -7,6 +7,7 @@ import ProfilePage from './pages/ProfilePage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import EmployeesPage from './pages/EmployeesPage';
 import ProductsPage from './pages/ProductsPage';
+import CategoriesPage from './pages/CategoriesPage';
 
 function App() {
   return (
@@ -38,7 +39,7 @@ function App() {
           }
         />
         <Route path="/manager/employees" element={<PrivateRoute role="Manager"><EmployeesPage /></PrivateRoute>} />
-        <Route path="/manager/categories" element={<PrivateRoute role="Manager"><PlaceholderPage title="Категорії" /></PrivateRoute>} />
+        <Route path="/manager/categories" element={<PrivateRoute role="Manager"><CategoriesPage /></PrivateRoute>} />
         <Route path="/manager/products" element={<PrivateRoute role="Manager"><ProductsPage /></PrivateRoute>} />
         <Route path="/manager/store-products" element={<PrivateRoute role="Manager"><PlaceholderPage title="Товари в магазині" /></PrivateRoute>} />
         <Route path="/manager/customers" element={<PrivateRoute role="Manager"><PlaceholderPage title="Клієнти" /></PrivateRoute>} />
