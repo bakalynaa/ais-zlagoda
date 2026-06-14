@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { getCustomers, deleteCustomer, createCustomer } from '../api/customers';
+import { getCustomers, deleteCustomer, createCustomer, updateCustomer } from '../api/customers';
 
 interface Customer {
   card_number: string;
@@ -39,6 +39,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [percent, setPercent] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
 
@@ -83,22 +84,58 @@ export default function CustomersPage() {
     }
   };
 
+  const handleEdit = (c: Customer) => {
+    setEditId(c.card_number);
+    setForm({
+      card_number: c.card_number,
+      cust_surname: c.cust_surname,
+      cust_name: c.cust_name,
+      cust_patronymic: c.cust_patronymic || '',
+      phone_number: c.phone_number,
+      city: c.city || '',
+      street: c.street || '',
+      zip_code: c.zip_code || '',
+      percent: String(c.percent),
+    });
+    setShowForm(true);
+    setError('');
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditId(null);
+    setForm(emptyForm);
+    setError('');
+  };
+
   const handleSubmit = async () => {
     setError('');
     try {
-      await createCustomer({
-        ...form,
-        percent: parseInt(form.percent),
-      });
-      setForm(emptyForm);
-      setShowForm(false);
+      if (editId) {
+        await updateCustomer(editId, {
+          cust_surname: form.cust_surname,
+          cust_name: form.cust_name,
+          cust_patronymic: form.cust_patronymic || null,
+          phone_number: form.phone_number,
+          city: form.city || null,
+          street: form.street || null,
+          zip_code: form.zip_code || null,
+          percent: parseInt(form.percent),
+        });
+      } else {
+        await createCustomer({
+          ...form,
+          percent: parseInt(form.percent),
+        });
+      }
+      handleCancel();
       fetchCustomers();
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {
         setError(detail.map((e: any) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка при додаванні');
+        setError(detail || 'Помилка');
       }
     }
   };
@@ -125,16 +162,16 @@ export default function CustomersPage() {
         />
         <button onClick={handleSearch}>Знайти</button>
         <button onClick={handleReset}>Скинути</button>
-        <button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Скасувати' : '+ Додати клієнта'}
+        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+          {showForm && !editId ? 'Скасувати' : '+ Додати клієнта'}
         </button>
       </div>
 
       {showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>Новий клієнт</h3>
+          <h3>{editId ? 'Редагувати клієнта' : 'Новий клієнт'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {field('Номер карти', <input style={inputStyle} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />)}
+            {!editId && field('Номер карти', <input style={inputStyle} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />)}
             {field('Прізвище', <input style={inputStyle} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />)}
             {field("Ім'я", <input style={inputStyle} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />)}
             {field('По батькові', <input style={inputStyle} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
@@ -145,7 +182,10 @@ export default function CustomersPage() {
             {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
-          <button onClick={handleSubmit} style={{ marginTop: '0.75rem' }}>Зберегти</button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <button onClick={handleSubmit}>Зберегти</button>
+            <button onClick={handleCancel}>Скасувати</button>
+          </div>
         </div>
       )}
 
@@ -175,10 +215,9 @@ export default function CustomersPage() {
                 <td>{c.phone_number}</td>
                 <td>{c.city || '—'}</td>
                 <td>{c.percent}%</td>
-                <td>
-                  <button onClick={() => handleDelete(c.card_number)}>
-                    Видалити
-                  </button>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => handleEdit(c)}>Редагувати</button>
+                  <button onClick={() => handleDelete(c.card_number)}>Видалити</button>
                 </td>
               </tr>
             ))}
