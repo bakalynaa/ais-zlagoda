@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { getEmployees, deleteEmployee } from '../api/employees';
+import { getEmployees, deleteEmployee, createEmployee } from '../api/employees';
 
 interface Employee {
   id_employee: string;
@@ -17,10 +17,36 @@ interface Employee {
   zip_code: string;
 }
 
+const emptyForm = {
+  id_employee: '',
+  empl_surname: '',
+  empl_name: '',
+  empl_patronymic: '',
+  empl_role: 'Cashier',
+  salary: '',
+  date_of_birth: '',
+  date_of_start: '',
+  phone_number: '',
+  city: '',
+  street: '',
+  zip_code: '',
+  password: '',
+};
+
+const field = (label: string, children: React.ReactNode) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    {children}
+  </div>
+);
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState('');
 
   const fetchEmployees = () => {
     getEmployees()
@@ -55,6 +81,28 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleSubmit = async () => {
+    setError('');
+    try {
+      await createEmployee({
+        ...form,
+        salary: parseFloat(form.salary),
+      });
+      setForm(emptyForm);
+      setShowForm(false);
+      fetchEmployees();
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail.map((e: any) => e.msg).join(', '));
+      } else {
+        setError(detail || 'Помилка при додаванні');
+      }
+    }
+  };
+
+  const inputStyle = { padding: '0.5rem', width: '100%' };
+
   return (
     <Layout>
       <h1>Працівники</h1>
@@ -66,7 +114,37 @@ export default function EmployeesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <button onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Скасувати' : '+ Додати працівника'}
+        </button>
       </div>
+
+      {showForm && (
+        <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+          <h3>Новий працівник</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {field('ID працівника', <input style={inputStyle} value={form.id_employee} onChange={e => setForm({...form, id_employee: e.target.value})} />)}
+            {field('Прізвище', <input style={inputStyle} value={form.empl_surname} onChange={e => setForm({...form, empl_surname: e.target.value})} />)}
+            {field("Ім'я", <input style={inputStyle} value={form.empl_name} onChange={e => setForm({...form, empl_name: e.target.value})} />)}
+            {field('По батькові', <input style={inputStyle} value={form.empl_patronymic} onChange={e => setForm({...form, empl_patronymic: e.target.value})} />)}
+            {field('Роль', <select style={inputStyle} value={form.empl_role} onChange={e => setForm({...form, empl_role: e.target.value})}>
+              <option value="Cashier">Касир</option>
+              <option value="Manager">Менеджер</option>
+            </select>)}
+            {field('Зарплата', <input style={inputStyle} type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} />)}
+            {field('Дата народження', <input style={inputStyle} type="date" value={form.date_of_birth} onChange={e => setForm({...form, date_of_birth: e.target.value})} />)}
+            {field('Дата початку роботи', <input style={inputStyle} type="date" value={form.date_of_start} onChange={e => setForm({...form, date_of_start: e.target.value})} />)}
+            {field('Телефон', <input style={inputStyle} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />)}
+            {field('Місто', <input style={inputStyle} value={form.city} onChange={e => setForm({...form, city: e.target.value})} />)}
+            {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
+            {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
+            {field('Пароль', <input style={inputStyle} type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />)}
+          </div>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          <button onClick={handleSubmit} style={{ marginTop: '0.75rem' }}>Зберегти</button>
+        </div>
+      )}
+
       {loading ? (
         <p>Завантаження...</p>
       ) : (
