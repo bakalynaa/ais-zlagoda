@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { getCustomers } from '../api/customers';
+import { getCustomers, createCustomer, updateCustomer } from '../api/customers';
 
 interface Customer {
   card_number: string;
@@ -9,13 +9,38 @@ interface Customer {
   cust_patronymic: string | null;
   phone_number: string;
   city: string | null;
+  street: string | null;
+  zip_code: string | null;
   percent: number;
 }
+
+const emptyForm = {
+  card_number: '',
+  cust_surname: '',
+  cust_name: '',
+  cust_patronymic: '',
+  phone_number: '',
+  city: '',
+  street: '',
+  zip_code: '',
+  percent: '',
+};
+
+const field = (label: string, children: React.ReactNode) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    {children}
+  </div>
+);
 
 export default function CashierCustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState('');
 
   const fetchCustomers = (surname?: string) => {
     setLoading(true);
@@ -28,6 +53,8 @@ export default function CashierCustomersPage() {
           cust_patronymic: row[3],
           phone_number: row[4],
           city: row[5],
+          street: row[6],
+          zip_code: row[7],
           percent: row[8],
         }));
         setCustomers(mapped);
@@ -39,6 +66,64 @@ export default function CashierCustomersPage() {
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  const handleEdit = (c: Customer) => {
+    setEditId(c.card_number);
+    setForm({
+      card_number: c.card_number,
+      cust_surname: c.cust_surname,
+      cust_name: c.cust_name,
+      cust_patronymic: c.cust_patronymic || '',
+      phone_number: c.phone_number,
+      city: c.city || '',
+      street: c.street || '',
+      zip_code: c.zip_code || '',
+      percent: String(c.percent),
+    });
+    setShowForm(true);
+    setError('');
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditId(null);
+    setForm(emptyForm);
+    setError('');
+  };
+
+  const handleSubmit = async () => {
+    setError('');
+    try {
+      if (editId) {
+        await updateCustomer(editId, {
+          cust_surname: form.cust_surname,
+          cust_name: form.cust_name,
+          cust_patronymic: form.cust_patronymic || null,
+          phone_number: form.phone_number,
+          city: form.city || null,
+          street: form.street || null,
+          zip_code: form.zip_code || null,
+          percent: parseInt(form.percent),
+        });
+      } else {
+        await createCustomer({
+          ...form,
+          percent: parseInt(form.percent),
+        });
+      }
+      handleCancel();
+      fetchCustomers();
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail.map((e: any) => e.msg).join(', '));
+      } else {
+        setError(detail || 'Помилка');
+      }
+    }
+  };
+
+  const inputStyle = { padding: '0.5rem', width: '100%' };
 
   return (
     <Layout>
@@ -53,7 +138,33 @@ export default function CashierCustomersPage() {
         />
         <button onClick={() => fetchCustomers(search || undefined)}>Знайти</button>
         <button onClick={() => { setSearch(''); fetchCustomers(); }}>Скинути</button>
+        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+          {showForm && !editId ? 'Скасувати' : '+ Додати клієнта'}
+        </button>
       </div>
+
+      {showForm && (
+        <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+          <h3>{editId ? 'Редагувати клієнта' : 'Новий клієнт'}</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {!editId && field('Номер карти', <input style={inputStyle} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />)}
+            {field('Прізвище', <input style={inputStyle} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />)}
+            {field("Ім'я", <input style={inputStyle} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />)}
+            {field('По батькові', <input style={inputStyle} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
+            {field('Телефон', <input style={inputStyle} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />)}
+            {field('% знижки', <input style={inputStyle} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />)}
+            {field('Місто', <input style={inputStyle} value={form.city} onChange={e => setForm({...form, city: e.target.value})} />)}
+            {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
+            {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
+          </div>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <button onClick={handleSubmit}>Зберегти</button>
+            <button onClick={handleCancel}>Скасувати</button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p>Завантаження...</p>
       ) : (
@@ -66,6 +177,7 @@ export default function CashierCustomersPage() {
               <th>Телефон</th>
               <th>Місто</th>
               <th>Знижка</th>
+              <th>Дії</th>
             </tr>
           </thead>
           <tbody>
@@ -77,6 +189,9 @@ export default function CashierCustomersPage() {
                 <td>{c.phone_number}</td>
                 <td>{c.city || '—'}</td>
                 <td>{c.percent}%</td>
+                <td>
+                  <button onClick={() => handleEdit(c)}>Редагувати</button>
+                </td>
               </tr>
             ))}
           </tbody>
