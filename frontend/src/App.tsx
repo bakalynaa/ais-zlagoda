@@ -13,6 +13,7 @@ import ChecksPage from './pages/ChecksPage';
 import StoreProductsPage from './pages/StoreProductsPage';
 import CashierCustomersPage from './pages/CashierCustomersPage';
 import CashierChecksPage from './pages/CashierChecksPage';
+import ReportsPage from './pages/ReportsPage';
 
 function App() {
   return (
@@ -49,7 +50,7 @@ function App() {
         <Route path="/manager/store-products" element={<PrivateRoute role="Manager"><StoreProductsPage /></PrivateRoute>} />
         <Route path="/manager/customers" element={<PrivateRoute role="Manager"><CustomersPage /></PrivateRoute>} />
         <Route path="/manager/checks" element={<PrivateRoute role="Manager"><ChecksPage /></PrivateRoute>} />
-        <Route path="/manager/reports" element={<PrivateRoute role="Manager"><PlaceholderPage title="Звіти" /></PrivateRoute>} />
+        <Route path="/manager/reports" element={<PrivateRoute role="Manager"><ReportsPage /></PrivateRoute>} />
         <Route path="/cashier/products" element={<PrivateRoute role="Cashier"><ProductsPage /></PrivateRoute>} />
         <Route path="/cashier/customers" element={<PrivateRoute role="Cashier"><CashierCustomersPage /></PrivateRoute>} />
         <Route path="/cashier/checks" element={<PrivateRoute role="Cashier"><CashierChecksPage /></PrivateRoute>} />
