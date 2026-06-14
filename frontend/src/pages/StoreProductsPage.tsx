@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { getStoreProducts, deleteStoreProduct, createStoreProduct } from '../api/store_products';
+import { getStoreProducts, deleteStoreProduct, createStoreProduct, updateStoreProduct } from '../api/store_products';
 import { getProducts } from '../api/products';
 
 interface StoreProduct {
@@ -42,6 +42,7 @@ export default function StoreProductsPage() {
   const [filter, setFilter] = useState<'all' | 'promotional' | 'non-promotional'>('all');
   const [upcSearch, setUpcSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editUPC, setEditUPC] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
 
@@ -87,26 +88,53 @@ export default function StoreProductsPage() {
     }
   };
 
+  const handleEdit = (p: StoreProduct) => {
+    setEditUPC(p.UPC);
+    setForm({
+      UPC: p.UPC,
+      UPC_prom: p.UPC_prom || '',
+      id_product: '',
+      selling_price: String(p.selling_price),
+      products_number: String(p.products_number),
+      promotional_product: p.promotional_product,
+    });
+    setShowForm(true);
+    setError('');
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditUPC(null);
+    setForm(emptyForm);
+    setError('');
+  };
+
   const handleSubmit = async () => {
     setError('');
     try {
-      await createStoreProduct({
-        UPC: form.UPC,
-        UPC_prom: form.UPC_prom || null,
-        id_product: parseInt(form.id_product),
-        selling_price: parseFloat(form.selling_price),
-        products_number: parseInt(form.products_number),
-        promotional_product: form.promotional_product,
-      });
-      setForm(emptyForm);
-      setShowForm(false);
+      if (editUPC) {
+        await updateStoreProduct(editUPC, {
+          selling_price: parseFloat(form.selling_price),
+          products_number: parseInt(form.products_number),
+        });
+      } else {
+        await createStoreProduct({
+          UPC: form.UPC,
+          UPC_prom: form.UPC_prom || null,
+          id_product: parseInt(form.id_product),
+          selling_price: parseFloat(form.selling_price),
+          products_number: parseInt(form.products_number),
+          promotional_product: form.promotional_product,
+        });
+      }
+      handleCancel();
       fetchProducts();
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {
         setError(detail.map((e: any) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка при додаванні');
+        setError(detail || 'Помилка');
       }
     }
   };
@@ -116,7 +144,6 @@ export default function StoreProductsPage() {
   );
 
   const selectedProduct = allProducts.find(p => String(p.id_product) === form.id_product);
-
   const inputStyle = { padding: '0.5rem', width: '100%' };
 
   return (
@@ -133,19 +160,18 @@ export default function StoreProductsPage() {
           value={upcSearch}
           onChange={(e) => setUpcSearch(e.target.value)}
         />
-        <button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Скасувати' : '+ Додати товар'}
+        <button onClick={() => { setEditUPC(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+          {showForm && !editUPC ? 'Скасувати' : '+ Додати товар'}
         </button>
       </div>
 
       {showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>Новий товар у магазині</h3>
+          <h3>{editUPC ? 'Редагувати товар у магазині' : 'Новий товар у магазині'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {field('Товар', (
+            {!editUPC && field('Товар', (
               <select style={inputStyle} value={form.id_product} onChange={e => {
                 const id = e.target.value;
-                const selected = allProducts.find(p => String(p.id_product) === id);
                 setForm({...form, id_product: id, UPC: ''});
               }}>
                 <option value="">— Оберіть товар —</option>
@@ -154,7 +180,7 @@ export default function StoreProductsPage() {
                 ))}
               </select>
             ))}
-            {field('UPC', (
+            {!editUPC && field('UPC', (
               <div>
                 <input style={inputStyle} value={form.UPC} onChange={e => setForm({...form, UPC: e.target.value})} />
                 {selectedProduct && (
@@ -166,16 +192,19 @@ export default function StoreProductsPage() {
             ))}
             {field('Ціна продажу', <input style={inputStyle} type="number" value={form.selling_price} onChange={e => setForm({...form, selling_price: e.target.value})} />)}
             {field('Кількість', <input style={inputStyle} type="number" value={form.products_number} onChange={e => setForm({...form, products_number: e.target.value})} />)}
-            {field('Акційний товар', (
+            {!editUPC && field('Акційний товар', (
               <select style={inputStyle} value={String(form.promotional_product)} onChange={e => setForm({...form, promotional_product: e.target.value === 'true'})}>
                 <option value="false">Ні</option>
                 <option value="true">Так</option>
               </select>
             ))}
-            {form.promotional_product && field('UPC звичайного товару', <input style={inputStyle} value={form.UPC_prom} onChange={e => setForm({...form, UPC_prom: e.target.value})} />)}
+            {!editUPC && form.promotional_product && field('UPC звичайного товару', <input style={inputStyle} value={form.UPC_prom} onChange={e => setForm({...form, UPC_prom: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
-          <button onClick={handleSubmit} style={{ marginTop: '0.75rem' }}>Зберегти</button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <button onClick={handleSubmit}>Зберегти</button>
+            <button onClick={handleCancel}>Скасувати</button>
+          </div>
         </div>
       )}
 
@@ -201,7 +230,8 @@ export default function StoreProductsPage() {
                 <td>{p.selling_price} грн</td>
                 <td>{p.products_number}</td>
                 <td>{p.promotional_product ? '+' : '-'}</td>
-                <td>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => handleEdit(p)}>Редагувати</button>
                   <button onClick={() => handleDelete(p.UPC)}>Видалити</button>
                 </td>
               </tr>

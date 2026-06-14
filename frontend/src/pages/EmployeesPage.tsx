@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { getEmployees, deleteEmployee, createEmployee } from '../api/employees';
+import { getEmployees, deleteEmployee, createEmployee, updateEmployee } from '../api/employees';
 
 interface Employee {
   id_employee: string;
@@ -45,6 +45,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
 
@@ -81,22 +82,65 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleEdit = (e: Employee) => {
+    setEditId(e.id_employee);
+    setForm({
+      id_employee: e.id_employee,
+      empl_surname: e.empl_surname,
+      empl_name: e.empl_name,
+      empl_patronymic: e.empl_patronymic || '',
+      empl_role: e.empl_role,
+      salary: String(e.salary),
+      date_of_birth: e.date_of_birth?.toString().split('T')[0] || '',
+      date_of_start: e.date_of_start?.toString().split('T')[0] || '',
+      phone_number: e.phone_number,
+      city: e.city,
+      street: e.street,
+      zip_code: e.zip_code,
+      password: '',
+    });
+    setShowForm(true);
+    setError('');
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditId(null);
+    setForm(emptyForm);
+    setError('');
+  };
+
   const handleSubmit = async () => {
     setError('');
     try {
-      await createEmployee({
-        ...form,
-        salary: parseFloat(form.salary),
-      });
-      setForm(emptyForm);
-      setShowForm(false);
+      if (editId) {
+        await updateEmployee(editId, {
+          empl_surname: form.empl_surname,
+          empl_name: form.empl_name,
+          empl_patronymic: form.empl_patronymic || null,
+          empl_role: form.empl_role,
+          salary: parseFloat(form.salary),
+          date_of_birth: form.date_of_birth,
+          date_of_start: form.date_of_start,
+          phone_number: form.phone_number,
+          city: form.city,
+          street: form.street,
+          zip_code: form.zip_code,
+        });
+      } else {
+        await createEmployee({
+          ...form,
+          salary: parseFloat(form.salary),
+        });
+      }
+      handleCancel();
       fetchEmployees();
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {
         setError(detail.map((e: any) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка при додаванні');
+        setError(detail || 'Помилка');
       }
     }
   };
@@ -114,16 +158,16 @@ export default function EmployeesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Скасувати' : '+ Додати працівника'}
+        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+          {showForm && !editId ? 'Скасувати' : '+ Додати працівника'}
         </button>
       </div>
 
       {showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>Новий працівник</h3>
+          <h3>{editId ? 'Редагувати працівника' : 'Новий працівник'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {field('ID працівника', <input style={inputStyle} value={form.id_employee} onChange={e => setForm({...form, id_employee: e.target.value})} />)}
+            {!editId && field('ID працівника', <input style={inputStyle} value={form.id_employee} onChange={e => setForm({...form, id_employee: e.target.value})} />)}
             {field('Прізвище', <input style={inputStyle} value={form.empl_surname} onChange={e => setForm({...form, empl_surname: e.target.value})} />)}
             {field("Ім'я", <input style={inputStyle} value={form.empl_name} onChange={e => setForm({...form, empl_name: e.target.value})} />)}
             {field('По батькові', <input style={inputStyle} value={form.empl_patronymic} onChange={e => setForm({...form, empl_patronymic: e.target.value})} />)}
@@ -138,10 +182,13 @@ export default function EmployeesPage() {
             {field('Місто', <input style={inputStyle} value={form.city} onChange={e => setForm({...form, city: e.target.value})} />)}
             {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
             {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
-            {field('Пароль', <input style={inputStyle} type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />)}
+            {!editId && field('Пароль', <input style={inputStyle} type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
-          <button onClick={handleSubmit} style={{ marginTop: '0.75rem' }}>Зберегти</button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <button onClick={handleSubmit}>Зберегти</button>
+            <button onClick={handleCancel}>Скасувати</button>
+          </div>
         </div>
       )}
 
@@ -175,10 +222,9 @@ export default function EmployeesPage() {
                 <td>{e.salary} грн</td>
                 <td>{e.phone_number}</td>
                 <td>{e.city}</td>
-                <td>
-                  <button onClick={() => handleDelete(e.id_employee)}>
-                    Видалити
-                  </button>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => handleEdit(e)}>Редагувати</button>
+                  <button onClick={() => handleDelete(e.id_employee)}>Видалити</button>
                 </td>
               </tr>
             ))}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Layout from '../components/Layout';
-import { getProducts, createProduct, deleteProduct } from '../api/products';
+import { getProducts, createProduct, deleteProduct, updateProduct } from '../api/products';
 import { getCategories } from '../api/categories';
 
 interface Product {
@@ -37,6 +37,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
 
@@ -81,22 +82,49 @@ export default function ProductsPage() {
     }
   };
 
+  const handleEdit = (p: Product) => {
+    setEditId(p.id_product);
+    setForm({
+      category_number: String(p.category_number),
+      product_name: p.product_name,
+      manufacturer: p.manufacturer,
+      characteristics: p.characteristics,
+    });
+    setShowForm(true);
+    setError('');
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditId(null);
+    setForm(emptyForm);
+    setError('');
+  };
+
   const handleSubmit = async () => {
     setError('');
     try {
-      await createProduct({
-        ...form,
-        category_number: parseInt(form.category_number),
-      });
-      setForm(emptyForm);
-      setShowForm(false);
+      if (editId) {
+        await updateProduct(editId, {
+          category_number: parseInt(form.category_number),
+          product_name: form.product_name,
+          manufacturer: form.manufacturer,
+          characteristics: form.characteristics,
+        });
+      } else {
+        await createProduct({
+          ...form,
+          category_number: parseInt(form.category_number),
+        });
+      }
+      handleCancel();
       fetchProducts();
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {
         setError(detail.map((e: any) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка при додаванні');
+        setError(detail || 'Помилка');
       }
     }
   };
@@ -114,14 +142,14 @@ export default function ProductsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Скасувати' : '+ Додати товар'}
+        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+          {showForm && !editId ? 'Скасувати' : '+ Додати товар'}
         </button>
       </div>
 
       {showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>Новий товар</h3>
+          <h3>{editId ? 'Редагувати товар' : 'Новий товар'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             {field('Категорія', (
               <select style={inputStyle} value={form.category_number} onChange={e => setForm({...form, category_number: e.target.value})}>
@@ -136,7 +164,10 @@ export default function ProductsPage() {
             {field('Характеристики', <input style={inputStyle} value={form.characteristics} onChange={e => setForm({...form, characteristics: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
-          <button onClick={handleSubmit} style={{ marginTop: '0.75rem' }}>Зберегти</button>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <button onClick={handleSubmit}>Зберегти</button>
+            <button onClick={handleCancel}>Скасувати</button>
+          </div>
         </div>
       )}
 
@@ -162,10 +193,9 @@ export default function ProductsPage() {
                 <td>{p.manufacturer}</td>
                 <td>{p.characteristics}</td>
                 <td>{p.category_name}</td>
-                <td>
-                  <button onClick={() => handleDelete(p.id_product)}>
-                    Видалити
-                  </button>
+                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => handleEdit(p)}>Редагувати</button>
+                  <button onClick={() => handleDelete(p.id_product)}>Видалити</button>
                 </td>
               </tr>
             ))}
