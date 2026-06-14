@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Layout from '../components/Layout';
-import { getProducts } from '../api/products';
+import { getProducts, createProduct, deleteProduct } from '../api/products';
+import { getCategories } from '../api/categories';
 
 interface Product {
   id_product: number;
@@ -8,14 +9,38 @@ interface Product {
   manufacturer: string;
   characteristics: string;
   category_name?: string;
+  category_number?: number;
 }
+
+interface Category {
+  category_number: number;
+  category_name: string;
+}
+
+const emptyForm = {
+  category_number: '',
+  product_name: '',
+  manufacturer: '',
+  characteristics: '',
+};
+
+const field = (label: string, children: React.ReactNode) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    {children}
+  </div>
+);
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
+  const fetchProducts = () => {
     getProducts()
       .then((data) => {
         const mapped = data.map((row: any[]) => ({
@@ -23,12 +48,23 @@ export default function ProductsPage() {
           product_name: row[1],
           manufacturer: row[2],
           characteristics: row[3],
+          category_number: row[4],
           category_name: row[5],
         }));
         setProducts(mapped);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    getCategories().then((data) => {
+      setCategories(data.map((row: any[]) => ({
+        category_number: row[0],
+        category_name: row[1],
+      })));
+    });
   }, []);
 
   const filtered = useMemo(() => {
@@ -39,16 +75,71 @@ export default function ProductsPage() {
     );
   }, [search, products]);
 
+  const handleDelete = (id: number) => {
+    if (confirm('Видалити товар?')) {
+      deleteProduct(id).then(fetchProducts);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setError('');
+    try {
+      await createProduct({
+        ...form,
+        category_number: parseInt(form.category_number),
+      });
+      setForm(emptyForm);
+      setShowForm(false);
+      fetchProducts();
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail.map((e: any) => e.msg).join(', '));
+      } else {
+        setError(detail || 'Помилка при додаванні');
+      }
+    }
+  };
+
+  const inputStyle = { padding: '0.5rem', width: '100%' };
+
   return (
     <Layout>
       <h1>Товари</h1>
-      <input
-        className="search-input"
-        type="text"
-        placeholder="Пошук за назвою..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Пошук за назвою..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Скасувати' : '+ Додати товар'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+          <h3>Новий товар</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {field('Категорія', (
+              <select style={inputStyle} value={form.category_number} onChange={e => setForm({...form, category_number: e.target.value})}>
+                <option value="">— Оберіть категорію —</option>
+                {categories.map(c => (
+                  <option key={c.category_number} value={c.category_number}>{c.category_name}</option>
+                ))}
+              </select>
+            ))}
+            {field('Назва', <input style={inputStyle} value={form.product_name} onChange={e => setForm({...form, product_name: e.target.value})} />)}
+            {field('Виробник', <input style={inputStyle} value={form.manufacturer} onChange={e => setForm({...form, manufacturer: e.target.value})} />)}
+            {field('Характеристики', <input style={inputStyle} value={form.characteristics} onChange={e => setForm({...form, characteristics: e.target.value})} />)}
+          </div>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          <button onClick={handleSubmit} style={{ marginTop: '0.75rem' }}>Зберегти</button>
+        </div>
+      )}
+
       {loading ? (
         <p>Завантаження...</p>
       ) : (
@@ -59,6 +150,8 @@ export default function ProductsPage() {
               <th>Назва</th>
               <th>Виробник</th>
               <th>Характеристики</th>
+              <th>Категорія</th>
+              <th>Дії</th>
             </tr>
           </thead>
           <tbody>
@@ -68,6 +161,12 @@ export default function ProductsPage() {
                 <td>{p.product_name}</td>
                 <td>{p.manufacturer}</td>
                 <td>{p.characteristics}</td>
+                <td>{p.category_name}</td>
+                <td>
+                  <button onClick={() => handleDelete(p.id_product)}>
+                    Видалити
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

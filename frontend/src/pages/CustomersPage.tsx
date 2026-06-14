@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { getCustomers, deleteCustomer } from '../api/customers';
+import { getCustomers, deleteCustomer, createCustomer } from '../api/customers';
 
 interface Customer {
   card_number: string;
@@ -14,11 +14,33 @@ interface Customer {
   percent: number;
 }
 
+const emptyForm = {
+  card_number: '',
+  cust_surname: '',
+  cust_name: '',
+  cust_patronymic: '',
+  phone_number: '',
+  city: '',
+  street: '',
+  zip_code: '',
+  percent: '',
+};
+
+const field = (label: string, children: React.ReactNode) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    {children}
+  </div>
+);
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [percent, setPercent] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState('');
 
   const fetchCustomers = (surname?: string, pct?: number) => {
     setLoading(true);
@@ -61,6 +83,28 @@ export default function CustomersPage() {
     }
   };
 
+  const handleSubmit = async () => {
+    setError('');
+    try {
+      await createCustomer({
+        ...form,
+        percent: parseInt(form.percent),
+      });
+      setForm(emptyForm);
+      setShowForm(false);
+      fetchCustomers();
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail.map((e: any) => e.msg).join(', '));
+      } else {
+        setError(detail || 'Помилка при додаванні');
+      }
+    }
+  };
+
+  const inputStyle = { padding: '0.5rem', width: '100%' };
+
   return (
     <Layout>
       <h1>Клієнти</h1>
@@ -81,7 +125,30 @@ export default function CustomersPage() {
         />
         <button onClick={handleSearch}>Знайти</button>
         <button onClick={handleReset}>Скинути</button>
+        <button onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Скасувати' : '+ Додати клієнта'}
+        </button>
       </div>
+
+      {showForm && (
+        <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+          <h3>Новий клієнт</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {field('Номер карти', <input style={inputStyle} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />)}
+            {field('Прізвище', <input style={inputStyle} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />)}
+            {field("Ім'я", <input style={inputStyle} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />)}
+            {field('По батькові', <input style={inputStyle} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
+            {field('Телефон', <input style={inputStyle} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />)}
+            {field('% знижки', <input style={inputStyle} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />)}
+            {field('Місто', <input style={inputStyle} value={form.city} onChange={e => setForm({...form, city: e.target.value})} />)}
+            {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
+            {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
+          </div>
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          <button onClick={handleSubmit} style={{ marginTop: '0.75rem' }}>Зберегти</button>
+        </div>
+      )}
+
       {loading ? (
         <p>Завантаження...</p>
       ) : (
