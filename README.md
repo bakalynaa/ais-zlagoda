@@ -31,67 +31,25 @@
 | [Артем Бутирін](https://github.com/artbutyrin) | Frontend (React) |
 | [Дар'я Гречко](https://github.com/urkarnad) | Backend (FastAPI) |
 
-## Структура проєкту
-
-zlagoda/
-
-├── backend/
-
-│   ├── main.py
-
-│   ├── database.py
-
-│   ├── dependencies.py
-
-│   └── routers/
-
-│       ├── auth.py
-
-│       ├── employees.py
-
-│       ├── categories.py
-
-│       ├── products.py
-
-│       ├── store_products.py
-
-│       ├── customers.py
-
-│       ├── checks.py
-
-│       └── statistics.py
-
-├── frontend/
-
-│   └── src/
-
-│       ├── pages/
-
-│       ├── components/
-
-│       └── api/
-
-├── db/
-
-│   ├── schema.sql
-
-│   └── test_data.sql
-
-└── docs/
-
 ## Запуск
 
 ### Backend
-```bash
+```
+bash
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
+```
 ### Frontend
+```
 bash
 cd frontend
 npm install
 npm run dev
-
+```
 ### Змінні середовища
-Створи файл backend/.env: 
+Створи файл backend/.env:
+```
+DATABASE_URL=postgresql://...
+SECRET_KEY=your_secret_key
 ```
