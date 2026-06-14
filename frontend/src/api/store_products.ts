@@ -1,8 +1,14 @@
 import { apiClient } from './client';
 
 export const getStoreProducts = async (promotional?: boolean) => {
-  const params = promotional !== undefined ? `?promotional=${promotional}` : '';
-  const response = await apiClient.get(`/store-products/${params}`);
+  if (promotional === true) {
+    const response = await apiClient.get('/store-products/promotional');
+    return response.data;
+  } else if (promotional === false) {
+    const response = await apiClient.get('/store-products/non-promotional');
+    return response.data;
+  }
+  const response = await apiClient.get('/store-products/');
   return response.data;
 };
 

@@ -15,6 +15,7 @@ export default function StoreProductsPage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'promotional' | 'non-promotional'>('all');
+  const [upcSearch, setUpcSearch] = useState('');
 
   const fetchProducts = (f = filter) => {
     setLoading(true);
@@ -50,13 +51,24 @@ export default function StoreProductsPage() {
     }
   };
 
+  const filtered = products.filter(p =>
+    upcSearch ? p.UPC.includes(upcSearch) : true
+  );
+
   return (
     <Layout>
       <h1>Товари в магазині</h1>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <button onClick={() => handleFilter('all')}>Всі</button>
         <button onClick={() => handleFilter('promotional')}>Акційні</button>
         <button onClick={() => handleFilter('non-promotional')}>Не акційні</button>
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Пошук за UPC..."
+          value={upcSearch}
+          onChange={(e) => setUpcSearch(e.target.value)}
+        />
       </div>
       {loading ? (
         <p>Завантаження...</p>
@@ -73,13 +85,13 @@ export default function StoreProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
+            {filtered.map((p) => (
               <tr key={p.UPC}>
                 <td>{p.UPC}</td>
                 <td>{p.product_name}</td>
                 <td>{p.selling_price} грн</td>
                 <td>{p.products_number}</td>
-                <td>{p.promotional_product ? '✅' : '❌'}</td>
+                <td>{p.promotional_product ? '+' : '-'}</td>
                 <td>
                   <button onClick={() => handleDelete(p.UPC)}>Видалити</button>
                 </td>
@@ -88,7 +100,7 @@ export default function StoreProductsPage() {
           </tbody>
         </table>
       )}
-      {!loading && products.length === 0 && <p>Товарів не знайдено</p>}
+      {!loading && filtered.length === 0 && <p>Товарів не знайдено</p>}
     </Layout>
   );
 }
