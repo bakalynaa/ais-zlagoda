@@ -29,7 +29,7 @@ def _get_store_product(cur, upc: str):
 
 
 @router.get("/")
-def get_all_store_products(user=Depends(require_manager)):
+def get_all_store_products(user=Depends(get_current_user)):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
