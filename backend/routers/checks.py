@@ -84,7 +84,7 @@ def create_check(data: CheckCreate, user=Depends(require_cashier)):
     conn = get_connection()
     cur = conn.cursor()
     try:
-        check_number = f"CH{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        check_number = f"C{datetime.now().strftime('%d%H%M%S')}"
         sum_total = 0
 
         for item in data.items:
@@ -97,7 +97,7 @@ def create_check(data: CheckCreate, user=Depends(require_cashier)):
                 raise HTTPException(status_code=404, detail=f"Товар {item.UPC} не знайдено")
             if product[1] < item.product_number:
                 raise HTTPException(status_code=400, detail=f"Недостатньо товару {item.UPC}")
-            sum_total += product[0] * item.product_number
+            sum_total += float(product[0]) * item.product_number
 
         if data.card_number:
             cur.execute("SELECT percent FROM customer_card WHERE card_number = %s", (data.card_number,))

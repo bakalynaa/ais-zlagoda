@@ -14,6 +14,7 @@ import StoreProductsPage from './pages/StoreProductsPage';
 import CashierCustomersPage from './pages/CashierCustomersPage';
 import CashierChecksPage from './pages/CashierChecksPage';
 import ReportsPage from './pages/ReportsPage';
+import CashierPOSPage from './pages/CashierPOSPage';
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
           path="/cashier"
           element={
             <PrivateRoute role="Cashier">
-              <CashierDashboard />
+              <CashierPOSPage />
             </PrivateRoute>
           }
         />
