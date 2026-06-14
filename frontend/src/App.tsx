@@ -1,10 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import ManagerDashboard from './pages/ManagerDashboard';
-import CashierDashboard from './pages/CashierDashboard';
 import PrivateRoute from './components/PrivateRoute';
 import ProfilePage from './pages/ProfilePage';
-import PlaceholderPage from './pages/PlaceholderPage';
 import EmployeesPage from './pages/EmployeesPage';
 import ProductsPage from './pages/ProductsPage';
 import CategoriesPage from './pages/CategoriesPage';
@@ -15,6 +13,7 @@ import CashierCustomersPage from './pages/CashierCustomersPage';
 import CashierChecksPage from './pages/CashierChecksPage';
 import ReportsPage from './pages/ReportsPage';
 import CashierPOSPage from './pages/CashierPOSPage';
+import StatisticsPage from './pages/StatisticsPage';
 
 function App() {
   return (
@@ -52,6 +51,7 @@ function App() {
         <Route path="/manager/customers" element={<PrivateRoute role="Manager"><CustomersPage /></PrivateRoute>} />
         <Route path="/manager/checks" element={<PrivateRoute role="Manager"><ChecksPage /></PrivateRoute>} />
         <Route path="/manager/reports" element={<PrivateRoute role="Manager"><ReportsPage /></PrivateRoute>} />
+        <Route path="/manager/statistics" element={<PrivateRoute role="Manager"><StatisticsPage /></PrivateRoute>} />
         <Route path="/cashier/products" element={<PrivateRoute role="Cashier"><ProductsPage /></PrivateRoute>} />
         <Route path="/cashier/customers" element={<PrivateRoute role="Cashier"><CashierCustomersPage /></PrivateRoute>} />
         <Route path="/cashier/checks" element={<PrivateRoute role="Cashier"><CashierChecksPage /></PrivateRoute>} />
