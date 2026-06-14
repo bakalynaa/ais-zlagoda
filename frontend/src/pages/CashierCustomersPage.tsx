@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import CityInput from '../components/CityInput';
 import Layout from '../components/Layout';
 import { getCustomers, createCustomer, updateCustomer } from '../api/customers';
 
@@ -153,7 +154,7 @@ export default function CashierCustomersPage() {
             {field('По батькові', <input style={inputStyle} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
             {field('Телефон', <input style={inputStyle} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />)}
             {field('% знижки', <input style={inputStyle} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />)}
-            {field('Місто', <input style={inputStyle} value={form.city} onChange={e => setForm({...form, city: e.target.value})} />)}
+            {field('Місто', <CityInput style={inputStyle} value={form.city} onChange={val => setForm({...form, city: val})} />)}
             {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
             {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
           </div>
