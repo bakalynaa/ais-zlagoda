@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import CityInput from '../components/CityInput';
 import Layout from '../components/Layout';
 import { getEmployees, deleteEmployee, createEmployee, updateEmployee } from '../api/employees';
 
@@ -179,7 +180,7 @@ export default function EmployeesPage() {
             {field('Дата народження', <input style={inputStyle} type="date" value={form.date_of_birth} onChange={e => setForm({...form, date_of_birth: e.target.value})} />)}
             {field('Дата початку роботи', <input style={inputStyle} type="date" value={form.date_of_start} onChange={e => setForm({...form, date_of_start: e.target.value})} />)}
             {field('Телефон', <input style={inputStyle} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />)}
-            {field('Місто', <input style={inputStyle} value={form.city} onChange={e => setForm({...form, city: e.target.value})} />)}
+            {field('Місто', <CityInput style={inputStyle} value={form.city} onChange={val => setForm({...form, city: val})} />)}
             {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
             {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
             {!editId && field('Пароль', <input style={inputStyle} type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />)}
