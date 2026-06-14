@@ -11,6 +11,8 @@ import CategoriesPage from './pages/CategoriesPage';
 import CustomersPage from './pages/CustomersPage';
 import ChecksPage from './pages/ChecksPage';
 import StoreProductsPage from './pages/StoreProductsPage';
+import CashierCustomersPage from './pages/CashierCustomersPage';
+import CashierChecksPage from './pages/CashierChecksPage';
 
 function App() {
   return (
@@ -49,8 +51,8 @@ function App() {
         <Route path="/manager/checks" element={<PrivateRoute role="Manager"><ChecksPage /></PrivateRoute>} />
         <Route path="/manager/reports" element={<PrivateRoute role="Manager"><PlaceholderPage title="Звіти" /></PrivateRoute>} />
         <Route path="/cashier/products" element={<PrivateRoute role="Cashier"><ProductsPage /></PrivateRoute>} />
-        <Route path="/cashier/customers" element={<PrivateRoute role="Cashier"><PlaceholderPage title="Клієнти" /></PrivateRoute>} />
-        <Route path="/cashier/checks" element={<PrivateRoute role="Cashier"><PlaceholderPage title="Мої чеки" /></PrivateRoute>} />
+        <Route path="/cashier/customers" element={<PrivateRoute role="Cashier"><CashierCustomersPage /></PrivateRoute>} />
+        <Route path="/cashier/checks" element={<PrivateRoute role="Cashier"><CashierChecksPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
