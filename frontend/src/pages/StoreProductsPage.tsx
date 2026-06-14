@@ -28,9 +28,11 @@ const emptyForm = {
   promotional_product: false,
 };
 
-const field = (label: string, children: React.ReactNode) => (
+const field = (label: string, children: React.ReactNode, required = false) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>
+      {label}{required && <span style={{ color: 'red' }}> *</span>}
+    </label>
     {children}
   </div>
 );
@@ -45,6 +47,7 @@ export default function StoreProductsPage() {
   const [editUPC, setEditUPC] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const fetchProducts = (f = filter) => {
     setLoading(true);
@@ -100,6 +103,7 @@ export default function StoreProductsPage() {
     });
     setShowForm(true);
     setError('');
+    setTouched({});
   };
 
   const handleCancel = () => {
@@ -107,9 +111,30 @@ export default function StoreProductsPage() {
     setEditUPC(null);
     setForm(emptyForm);
     setError('');
+    setTouched({});
   };
 
+  const requiredFields = editUPC
+    ? ['selling_price', 'products_number']
+    : ['UPC', 'id_product', 'selling_price', 'products_number'];
+
+  const isInvalid = (f: string) => touched[f] && requiredFields.includes(f) && !form[f as keyof typeof form];
+
+  const inputStyle = (f: string) => ({
+    padding: '0.5rem',
+    width: '100%',
+    border: isInvalid(f) ? '1px solid red' : '1px solid #ccc',
+    borderRadius: '4px',
+  });
+
   const handleSubmit = async () => {
+    const allTouched = Object.fromEntries(requiredFields.map(f => [f, true]));
+    setTouched(allTouched);
+    const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
+    if (hasEmpty) {
+      setError("Заповніть всі обов'язкові поля");
+      return;
+    }
     setError('');
     try {
       if (editUPC) {
@@ -144,7 +169,6 @@ export default function StoreProductsPage() {
   );
 
   const selectedProduct = allProducts.find(p => String(p.id_product) === form.id_product);
-  const inputStyle = { padding: '0.5rem', width: '100%' };
 
   return (
     <Layout>
@@ -160,7 +184,7 @@ export default function StoreProductsPage() {
           value={upcSearch}
           onChange={(e) => setUpcSearch(e.target.value)}
         />
-        <button onClick={() => { setEditUPC(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+        <button onClick={() => { setEditUPC(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
           {showForm && !editUPC ? 'Скасувати' : '+ Додати товар'}
         </button>
       </div>
@@ -170,7 +194,7 @@ export default function StoreProductsPage() {
           <h3>{editUPC ? 'Редагувати товар у магазині' : 'Новий товар у магазині'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             {!editUPC && field('Товар', (
-              <select style={inputStyle} value={form.id_product} onChange={e => {
+              <select style={inputStyle('id_product')} value={form.id_product} onChange={e => {
                 const id = e.target.value;
                 setForm({...form, id_product: id, UPC: ''});
               }}>
@@ -179,26 +203,26 @@ export default function StoreProductsPage() {
                   <option key={p.id_product} value={p.id_product}>{p.product_name}</option>
                 ))}
               </select>
-            ))}
+            ), true)}
             {!editUPC && field('UPC', (
               <div>
-                <input style={inputStyle} value={form.UPC} onChange={e => setForm({...form, UPC: e.target.value})} />
+                <input style={inputStyle('UPC')} value={form.UPC} onChange={e => setForm({...form, UPC: e.target.value})} />
                 {selectedProduct && (
                   <small style={{ color: '#666' }}>
                     Підказка: UPC має починатись з {selectedProduct.category_number} ({selectedProduct.category_name})
                   </small>
                 )}
               </div>
-            ))}
-            {field('Ціна продажу', <input style={inputStyle} type="number" value={form.selling_price} onChange={e => setForm({...form, selling_price: e.target.value})} />)}
-            {field('Кількість', <input style={inputStyle} type="number" value={form.products_number} onChange={e => setForm({...form, products_number: e.target.value})} />)}
+            ), true)}
+            {field('Ціна продажу', <input style={inputStyle('selling_price')} type="number" value={form.selling_price} onChange={e => setForm({...form, selling_price: e.target.value})} />, true)}
+            {field('Кількість', <input style={inputStyle('products_number')} type="number" value={form.products_number} onChange={e => setForm({...form, products_number: e.target.value})} />, true)}
             {!editUPC && field('Акційний товар', (
-              <select style={inputStyle} value={String(form.promotional_product)} onChange={e => setForm({...form, promotional_product: e.target.value === 'true'})}>
+              <select style={inputStyle('promotional_product')} value={String(form.promotional_product)} onChange={e => setForm({...form, promotional_product: e.target.value === 'true'})}>
                 <option value="false">Ні</option>
                 <option value="true">Так</option>
               </select>
             ))}
-            {!editUPC && form.promotional_product && field('UPC звичайного товару', <input style={inputStyle} value={form.UPC_prom} onChange={e => setForm({...form, UPC_prom: e.target.value})} />)}
+            {!editUPC && form.promotional_product && field('UPC звичайного товару', <input style={inputStyle('UPC_prom')} value={form.UPC_prom} onChange={e => setForm({...form, UPC_prom: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>

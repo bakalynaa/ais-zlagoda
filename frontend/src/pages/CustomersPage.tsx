@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import CityInput from '../components/CityInput';
 import Layout from '../components/Layout';
 import { getCustomers, deleteCustomer, createCustomer, updateCustomer } from '../api/customers';
+import CityInput from '../components/CityInput';
 
 interface Customer {
   card_number: string;
@@ -27,9 +27,11 @@ const emptyForm = {
   percent: '',
 };
 
-const field = (label: string, children: React.ReactNode) => (
+const field = (label: string, children: React.ReactNode, required = false) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-    <label style={{ fontSize: '0.8rem', color: '#666' }}>{label}</label>
+    <label style={{ fontSize: '0.8rem', color: '#666' }}>
+      {label}{required && <span style={{ color: 'red' }}> *</span>}
+    </label>
     {children}
   </div>
 );
@@ -43,6 +45,7 @@ export default function CustomersPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const fetchCustomers = (surname?: string, pct?: number) => {
     setLoading(true);
@@ -100,6 +103,7 @@ export default function CustomersPage() {
     });
     setShowForm(true);
     setError('');
+    setTouched({});
   };
 
   const handleCancel = () => {
@@ -107,9 +111,30 @@ export default function CustomersPage() {
     setEditId(null);
     setForm(emptyForm);
     setError('');
+    setTouched({});
   };
 
+  const requiredFields = editId
+    ? ['cust_surname', 'cust_name', 'phone_number', 'percent']
+    : ['card_number', 'cust_surname', 'cust_name', 'phone_number', 'percent'];
+
+  const isInvalid = (f: string) => touched[f] && requiredFields.includes(f) && !form[f as keyof typeof form];
+
+  const inputStyle = (f: string) => ({
+    padding: '0.5rem',
+    width: '100%',
+    border: isInvalid(f) ? '1px solid red' : '1px solid #ccc',
+    borderRadius: '4px',
+  });
+
   const handleSubmit = async () => {
+    const allTouched = Object.fromEntries(requiredFields.map(f => [f, true]));
+    setTouched(allTouched);
+    const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
+    if (hasEmpty) {
+      setError("Заповніть всі обов'язкові поля!");
+      return;
+    }
     setError('');
     try {
       if (editId) {
@@ -141,8 +166,6 @@ export default function CustomersPage() {
     }
   };
 
-  const inputStyle = { padding: '0.5rem', width: '100%' };
-
   return (
     <Layout>
       <h1>Клієнти</h1>
@@ -163,7 +186,7 @@ export default function CustomersPage() {
         />
         <button onClick={handleSearch}>Знайти</button>
         <button onClick={handleReset}>Скинути</button>
-        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); }}>
+        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
           {showForm && !editId ? 'Скасувати' : '+ Додати клієнта'}
         </button>
       </div>
@@ -172,15 +195,15 @@ export default function CustomersPage() {
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
           <h3>{editId ? 'Редагувати клієнта' : 'Новий клієнт'}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {!editId && field('Номер карти', <input style={inputStyle} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />)}
-            {field('Прізвище', <input style={inputStyle} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />)}
-            {field("Ім'я", <input style={inputStyle} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />)}
-            {field('По батькові', <input style={inputStyle} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
-            {field('Телефон', <input style={inputStyle} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />)}
-            {field('% знижки', <input style={inputStyle} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />)}
-            {field('Місто', <CityInput style={inputStyle} value={form.city} onChange={val => setForm({...form, city: val})} />)}
-            {field('Вулиця', <input style={inputStyle} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
-            {field('Індекс', <input style={inputStyle} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
+            {!editId && field('Номер карти', <input style={inputStyle('card_number')} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />, true)}
+            {field('Прізвище', <input style={inputStyle('cust_surname')} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />, true)}
+            {field("Ім'я", <input style={inputStyle('cust_name')} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />, true)}
+            {field('По батькові', <input style={inputStyle('cust_patronymic')} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
+            {field('Телефон', <input style={inputStyle('phone_number')} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />, true)}
+            {field('% знижки', <input style={inputStyle('percent')} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />, true)}
+            {field('Місто', <CityInput style={inputStyle('city')} value={form.city} onChange={val => setForm({...form, city: val})} />)}
+            {field('Вулиця', <input style={inputStyle('street')} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
+            {field('Індекс', <input style={inputStyle('zip_code')} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
