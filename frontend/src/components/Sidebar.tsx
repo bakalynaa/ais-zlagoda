@@ -9,6 +9,7 @@ const managerLinks = [
   { to: '/manager/customers', label: 'Клієнти' },
   { to: '/manager/checks', label: 'Чеки' },
   { to: '/manager/reports', label: 'Звіти' },
+  { to: '/manager/statistics', label: 'Статистика' },
 ];
 
 const cashierLinks = [
