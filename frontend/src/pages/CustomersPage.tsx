@@ -18,10 +18,11 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [percent, setPercent] = useState('');
 
-  const fetchCustomers = (surname?: string) => {
+  const fetchCustomers = (surname?: string, pct?: number) => {
     setLoading(true);
-    getCustomers(surname)
+    getCustomers(surname, pct)
       .then((data) => {
         const mapped = data.map((row: any[]) => ({
           card_number: row[0],
@@ -45,7 +46,13 @@ export default function CustomersPage() {
   }, []);
 
   const handleSearch = () => {
-    fetchCustomers(search || undefined);
+    fetchCustomers(search || undefined, percent ? parseInt(percent) : undefined);
+  };
+
+  const handleReset = () => {
+    setSearch('');
+    setPercent('');
+    fetchCustomers();
   };
 
   const handleDelete = (cardNumber: string) => {
@@ -65,8 +72,15 @@ export default function CustomersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <input
+          type="number"
+          placeholder="% знижки"
+          value={percent}
+          onChange={(e) => setPercent(e.target.value)}
+          style={{ width: '100px', padding: '0.5rem' }}
+        />
         <button onClick={handleSearch}>Знайти</button>
-        <button onClick={() => { setSearch(''); fetchCustomers(); }}>Скинути</button>
+        <button onClick={handleReset}>Скинути</button>
       </div>
       {loading ? (
         <p>Завантаження...</p>

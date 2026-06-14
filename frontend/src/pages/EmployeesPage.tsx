@@ -20,6 +20,7 @@ interface Employee {
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   const fetchEmployees = () => {
     getEmployees()
@@ -57,6 +58,15 @@ export default function EmployeesPage() {
   return (
     <Layout>
       <h1>Працівники</h1>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Пошук за прізвищем..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
       {loading ? (
         <p>Завантаження...</p>
       ) : (
@@ -75,7 +85,9 @@ export default function EmployeesPage() {
             </tr>
           </thead>
           <tbody>
-            {employees.map((e) => (
+            {employees.filter(e =>
+              e.empl_surname.toLowerCase().includes(search.toLowerCase())
+            ).map((e) => (
               <tr key={e.id_employee}>
                 <td>{e.id_employee}</td>
                 <td>{e.empl_surname}</td>
