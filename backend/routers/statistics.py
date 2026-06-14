@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 from database import get_connection
 from dependencies import require_manager
-from typing import Optional
 
 router = APIRouter(prefix="/statistics", tags=["statistics"])
 
@@ -17,7 +16,7 @@ def get_cashier_total(
     cur.execute(
         """SELECT SUM(sum_total) FROM "Check"
         WHERE id_employee = %s
-        AND print_date BETWEEN %s AND %s""",
+        AND print_date >= %s AND print_date < %s::date + INTERVAL '1 day'""",
         (cashier_id, date_from, date_to)
     )
     result = cur.fetchone()[0]
@@ -35,7 +34,7 @@ def get_all_total(
     cur = conn.cursor()
     cur.execute(
         """SELECT SUM(sum_total) FROM "Check"
-        WHERE print_date BETWEEN %s AND %s""",
+        WHERE print_date >= %s AND print_date < %s::date + INTERVAL '1 day'""",
         (date_from, date_to)
     )
     result = cur.fetchone()[0]
@@ -56,7 +55,7 @@ def get_product_count(
         """SELECT SUM(s.product_number) FROM Sale s
         JOIN "Check" c ON s.check_number = c.check_number
         WHERE s.UPC = %s
-        AND c.print_date BETWEEN %s AND %s""",
+        AND c.print_date >= %s AND c.print_date < %s::date + INTERVAL '1 day'""",
         (upc, date_from, date_to)
     )
     result = cur.fetchone()[0]
