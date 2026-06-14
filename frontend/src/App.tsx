@@ -5,6 +5,7 @@ import CashierDashboard from './pages/CashierDashboard';
 import PrivateRoute from './components/PrivateRoute';
 import ProfilePage from './pages/ProfilePage';
 import PlaceholderPage from './pages/PlaceholderPage';
+import EmployeesPage from './pages/EmployeesPage';
 import ProductsPage from './pages/ProductsPage';
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route path="/manager/employees" element={<PrivateRoute role="Manager"><PlaceholderPage title="Працівники" /></PrivateRoute>} />
+        <Route path="/manager/employees" element={<PrivateRoute role="Manager"><EmployeesPage /></PrivateRoute>} />
         <Route path="/manager/categories" element={<PrivateRoute role="Manager"><PlaceholderPage title="Категорії" /></PrivateRoute>} />
         <Route path="/manager/products" element={<PrivateRoute role="Manager"><ProductsPage /></PrivateRoute>} />
         <Route path="/manager/store-products" element={<PrivateRoute role="Manager"><PlaceholderPage title="Товари в магазині" /></PrivateRoute>} />
