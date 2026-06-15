@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
 import { devLogin } from '../utils/devLogin';
 import type { UserRole } from '../types';
+import './LoginPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -39,57 +40,66 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page">
-      <h1>SVAGoda</h1>
-      <p>Вхід у систему</p>
+    <div className="login-page">
+      <div className="login-box">
+        <h2>ВХІД</h2>
 
-      <form onSubmit={handleSubmit}>
-        <label>
-          ID працівника
-          <input
-            type="text"
-            value={idEmployee}
-            onChange={(e) => setIdEmployee(e.target.value)}
-            required
-          />
-        </label>
+        <form id="loginForm" onSubmit={handleSubmit}>
+          <div className="input-group">
+            <i className="fas fa-user" aria-hidden="true" />
+            <input
+              type="text"
+              id="username"
+              value={idEmployee}
+              onChange={(e) => setIdEmployee(e.target.value)}
+              placeholder=" "
+              required
+              autoComplete="username"
+            />
+            <label htmlFor="username">ID працівника</label>
+          </div>
 
-        <label>
-          Пароль
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
+          <div className="input-group">
+            <i className="fas fa-lock" aria-hidden="true" />
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder=" "
+              required
+              autoComplete="current-password"
+            />
+            <label htmlFor="password">Пароль</label>
+          </div>
 
-        {error && <p className="error">{error}</p>}
+          {error && <p className="error">{error}</p>}
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Вхід...' : 'Увійти'}
-        </button>
-      </form>
-
-      {import.meta.env.DEV && (
-        <div className="login-test">
-          <p>Режим розробки — backend не потрібен</p>
-          <button
-            type="button"
-            className="login-test-btn"
-            onClick={() => handleDevLogin('Manager')}
-          >
-            Увійти без кредів (тест)
+          <button type="submit" className="login-btn" id="submitBtn" disabled={loading}>
+            {loading ? 'Перевірка...' : 'Увійти'}
           </button>
-          <button
-            type="button"
-            className="login-test-btn-secondary"
-            onClick={() => handleDevLogin('Cashier')}
-          >
-            Увійти як касир
-          </button>
-        </div>
-      )}
-    </main>
+        </form>
+
+        {import.meta.env.DEV && (
+          <div className="login-test">
+            <p>тест</p>
+            <button
+              type="button"
+              className="login-btn login-test-btn"
+              onClick={() => handleDevLogin('Manager')}
+            >
+              Увійти без кредів
+            </button>
+            <button
+              type="button"
+              className="login-btn login-test-btn-secondary"
+              onClick={() => handleDevLogin('Cashier')}
+            >
+              Увійти як касир
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

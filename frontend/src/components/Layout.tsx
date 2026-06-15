@@ -26,7 +26,7 @@ export default function Layout({ children }: Props) {
 
     localStorage.removeItem('role');
 
-    navigate('/login');
+    navigate('/first-screen');
 
   }
 
