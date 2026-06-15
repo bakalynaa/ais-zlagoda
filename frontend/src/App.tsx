@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
+import LoginGate from './pages/LoginGate';
+import FirstScreenPage from './pages/FirstScreenPage';
 import ManagerDashboard from './pages/ManagerDashboard';
 import PrivateRoute from './components/PrivateRoute';
 import ProfilePage from './pages/ProfilePage';
@@ -19,7 +20,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/first-screen" element={<FirstScreenPage />} />
+        <Route path="/login" element={<LoginGate />} />
         <Route
           path="/manager"
           element={
@@ -55,7 +57,7 @@ function App() {
         <Route path="/cashier/products" element={<PrivateRoute role="Cashier"><ProductsPage /></PrivateRoute>} />
         <Route path="/cashier/customers" element={<PrivateRoute role="Cashier"><CashierCustomersPage /></PrivateRoute>} />
         <Route path="/cashier/checks" element={<PrivateRoute role="Cashier"><CashierChecksPage /></PrivateRoute>} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/first-screen" replace />} />
       </Routes>
     </BrowserRouter>
   );

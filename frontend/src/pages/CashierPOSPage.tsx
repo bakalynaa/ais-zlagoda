@@ -127,8 +127,6 @@ export default function CashierPOSPage() {
       <h1>Каса</h1>
       {loading ? <p>Завантаження...</p> : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          
-          {/* Ліва частина — товари */}
           <div>
             <h2>Товари</h2>
             <input
@@ -170,7 +168,6 @@ export default function CashierPOSPage() {
             </div>
           </div>
 
-          {/* Права частина — кошик */}
           <div>
             <h2>Кошик</h2>
 
