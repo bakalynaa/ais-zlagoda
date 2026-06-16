@@ -41,7 +41,7 @@ export default function ProductsPage() {
   const isCashierView = location.pathname.startsWith('/cashier');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
@@ -68,21 +68,42 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-    getCategories().then((data) => {
-      setCategories(data.map((row: any[]) => ({
-        category_number: row[0],
-        category_name: row[1],
-      })));
-    });
-  }, []);
+    if (!isCashierView) {
+      getCategories().then((data) => {
+        setCategories(data.map((row: any[]) => ({
+          category_number: row[0],
+          category_name: row[1],
+        })));
+      }).catch(console.error);
+    }
+  }, [isCashierView]);
+
+  useEffect(() => {
+    if (isCashierView && products.length > 0) {
+      const unique = new Map<number, string>();
+      products.forEach((p) => {
+        if (p.category_number != null && p.category_name) {
+          unique.set(p.category_number, p.category_name);
+        }
+      });
+      setCategories(
+        [...unique.entries()].map(([category_number, category_name]) => ({
+          category_number,
+          category_name,
+        })),
+      );
+    }
+  }, [isCashierView, products]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p) =>
-      p.product_name.toLowerCase().includes(q)
-    );
-  }, [search, products]);
+    return products.filter((p) => {
+      const matchesSearch = !q || p.product_name.toLowerCase().includes(q);
+      const matchesCategory =
+        !categoryFilter || String(p.category_number) === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [search, categoryFilter, products]);
 
   const handleDelete = (id: number) => {
     if (confirm(t('deleteProductConfirm'))) {
@@ -162,7 +183,7 @@ export default function ProductsPage() {
       <div className={isCashierView ? 'manager-page-header' : undefined}>
         <h1>{t('productsTitle')}</h1>
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <input
           className="search-input"
           type="text"
@@ -170,12 +191,28 @@ export default function ProductsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
-          {showForm && !editId ? t('cancel') : t('addProduct')}
-        </button>
+        {categories.length > 0 && (
+          <select
+            className="manager-field-input"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">{t('category')}</option>
+            {categories.map((c) => (
+              <option key={c.category_number} value={c.category_number}>
+                {c.category_name}
+              </option>
+            ))}
+          </select>
+        )}
+        {!isCashierView && (
+          <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
+            {showForm && !editId ? t('cancel') : t('addProduct')}
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {!isCashierView && showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
           <h3>{editId ? t('editProduct') : t('newProduct')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -210,7 +247,7 @@ export default function ProductsPage() {
               <th>{t('manufacturer')}</th>
               <th>{t('characteristics')}</th>
               <th>{t('category')}</th>
-              <th>{t('actions')}</th>
+              {!isCashierView && <th>{t('actions')}</th>}
             </tr>
           </thead>
           <tbody>
@@ -221,10 +258,12 @@ export default function ProductsPage() {
                 <td>{p.manufacturer}</td>
                 <td>{p.characteristics}</td>
                 <td>{p.category_name}</td>
-                <td style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => handleEdit(p)}>{t('edit')}</button>
-                  <button onClick={() => handleDelete(p.id_product)}>{t('delete')}</button>
-                </td>
+                {!isCashierView && (
+                  <td style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => handleEdit(p)}>{t('edit')}</button>
+                    <button onClick={() => handleDelete(p.id_product)}>{t('delete')}</button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

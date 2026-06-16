@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
+import ReceiptPrint, { type ReceiptData } from '../components/ReceiptPrint';
 import { getStoreProducts } from '../api/store_products';
 import { getCustomers } from '../api/customers';
-import { apiClient } from '../api/client';
+import { createCheck } from '../api/checks';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface StoreProduct {
@@ -37,6 +38,7 @@ export default function CashierPOSPage() {
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   useEffect(() => {
     Promise.all([getStoreProducts(), getCustomers()])
@@ -95,9 +97,8 @@ export default function CashierPOSPage() {
     );
   };
 
-  const discount = selectedCard
-    ? customers.find((c) => c.card_number === selectedCard)?.percent || 0
-    : 0;
+  const selectedCustomer = customers.find((c) => c.card_number === selectedCard);
+  const discount = selectedCustomer?.percent || 0;
 
   const subtotal = cart.reduce((sum, item) => sum + item.selling_price * item.quantity, 0);
   const total = subtotal * (1 - discount / 100);
@@ -107,18 +108,45 @@ export default function CashierPOSPage() {
       setError(t('cartEmptyError'));
       return;
     }
+
+    const cartSnapshot = [...cart];
+    const cardLabel = selectedCustomer
+      ? `${selectedCustomer.cust_surname} ${selectedCustomer.cust_name} (${selectedCustomer.percent}%)`
+      : undefined;
+
     try {
-      await apiClient.post('/checks/', {
+      const result = await createCheck({
         card_number: selectedCard || null,
-        items: cart.map((item) => ({
+        items: cartSnapshot.map((item) => ({
           UPC: item.UPC,
           product_number: item.quantity,
         })),
       });
-      setSuccess(t('checkCreatedSuccess', { total: total.toFixed(2) }));
+
+      setReceipt({
+        check_number: result.check_number,
+        sum_total: result.sum_total,
+        vat: result.vat,
+        discount,
+        items: cartSnapshot,
+        card_label: cardLabel,
+        created_at: new Date(),
+      });
+
+      setSuccess(t('checkCreatedSuccess', { total: result.sum_total.toFixed(2) }));
       setCart([]);
       setSelectedCard('');
       setError('');
+
+      getStoreProducts().then((prods) => {
+        setProducts(prods.map((row: unknown[]) => ({
+          UPC: row[0] as string,
+          selling_price: row[2] as number,
+          products_number: row[3] as number,
+          promotional_product: row[4] as boolean,
+          product_name: row[5] as string,
+        })));
+      });
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
       setError(typeof detail === 'string' ? detail : t('checkCreateError'));
@@ -272,6 +300,10 @@ export default function CashierPOSPage() {
           </div>
         )}
       </section>
+
+      {receipt && (
+        <ReceiptPrint receipt={receipt} onClose={() => setReceipt(null)} />
+      )}
     </Layout>
   );
 }

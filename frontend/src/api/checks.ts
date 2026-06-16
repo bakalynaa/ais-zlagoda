@@ -18,3 +18,20 @@ export const deleteCheck = async (checkNumber: string) => {
   const response = await apiClient.delete(`/checks/${checkNumber}`);
   return response.data;
 };
+
+export interface CheckCreatePayload {
+  card_number?: string | null;
+  items: { UPC: string; product_number: number }[];
+}
+
+export interface CheckCreateResponse {
+  message: string;
+  check_number: string;
+  sum_total: number;
+  vat: number;
+}
+
+export const createCheck = async (payload: CheckCreatePayload) => {
+  const response = await apiClient.post<CheckCreateResponse>('/checks/', payload);
+  return response.data;
+};
