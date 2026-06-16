@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16
+    container_name: zlagoda-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zlagoda
+    ports:
+      - "5433:5432"
+    volumes:
+      - zlagoda_pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./db/test_data.sql:/docker-entrypoint-initdb.d/02-test_data.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zlagoda"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: zlagoda-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/zlagoda
+      SECRET_KEY: zlagoda_dev_secret
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  zlagoda_pgdata:
