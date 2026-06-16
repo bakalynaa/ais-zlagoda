@@ -104,9 +104,9 @@ INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic
 INSERT INTO employee (id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, date_of_birth, date_of_start, phone_number, city, street, zip_code, password_hash)
 VALUES (
     'C001',
-    'Мельник',
-    'Оксана',
-    'Василівна',
+    'Шаповал',
+    'Тетяна',
+    'Сергіївна',
     'Cashier',
     8000.00,
     '1995-05-15',
