@@ -38,7 +38,7 @@ export default function Layout({ children }: Props) {
 
       <header className="layout-header">
 
-        <span className="logo">SVAGoda</span>
+        <span className="logo">ZLAGODA</span>
 
         <span className="role">{role === 'Manager' ? 'Менеджер свагу' : 'Касир'}</span>
 

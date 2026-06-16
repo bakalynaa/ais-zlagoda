@@ -1,4 +1,4 @@
--- АІС «ZLAGODA» — тестові дані
+-- АІС ZLAGODA - тестові дані
 
 -- Категорії
 INSERT INTO category (category_name) VALUES
@@ -9,7 +9,7 @@ INSERT INTO category (category_name) VALUES
 ('Овочі');
 
 -- Товари
--- Енергетичні напої (category_number = 1)
+-- Енергетичні напої category_number = 1
 INSERT INTO product (category_number, product_name, manufacturer, characteristics) VALUES
 (1, 'Red Bull без цукру', 'Red Bull', 'Безалкогольний енергетичний напій, 0.25л'),
 (1, 'Red Bull класичний', 'Red Bull', 'Безалкогольний енергетичний напій, 0.25л'),
@@ -17,28 +17,28 @@ INSERT INTO product (category_number, product_name, manufacturer, characteristic
 (1, 'Monster Energy', 'Monster Energy', 'Безалкогольний енергетичний напій з/б, 0.5л'),
 (1, 'Monster Energy Ultra', 'Monster Energy', 'Безалкогольний енергетичний напій без цукру з/б, 0.5л'),
 
--- Торти та тістечка (category_number = 2)
+-- Торти та тістечка category_number = 2
 (2, 'Торт Valentin&Valentina Shtefanyo', 'Valentin & Valentina Shtefanyo', 'Торт, 410г, Ужгород'),
 (2, 'Торт Балерина Капучино', 'Київ БКК', 'Торт, 450г'),
 (2, 'Торт Київський', 'Roshen', 'Торт, 450г'),
 (2, 'Торт Грильяж', 'Roshen', 'Торт, 450г'),
 (2, 'Торт Празький з вишнею', 'Київ БКК', 'Торт, 850г'),
 
--- Сири (category_number = 3)
+-- Сири category_number = 3
 (3, 'Моцарелла чеддеризована 45%', 'Ферма', 'М''який сир, 180г, жирність 45%'),
 (3, 'Сулугуні чеддеризований 45%', 'Ферма', 'Розсільний сир, 180г, жирність 45%'),
 (3, 'Грана Падано 42%', 'Ghidetti', 'Витриманий сир з коров''ячого молока 10 місяців, 150г'),
 (3, 'Містер Мікс тертий 32%', 'Ghidetti', 'Тертий мікс твердих сирів з коров''ячого молока, 100г'),
 (3, 'Фелата м''який 45%', 'Premialle', 'М''який сир, 300г, жирність 45%'),
 
--- Кисломолочні напої (category_number = 4)
+-- Кисломолочні напої category_number = 4
 (4, 'Закваска 2.5%', 'Яготинське', 'Закваска, пюр-пак, 450г, жирність 2.5%'),
 (4, 'Ряжанка 3.2%', 'Яготинське', 'Ряжанка, пляшка, 750г, жирність 3.2%'),
 (4, 'Кефір 2.5%', 'Яготинське', 'Кефір, пляшка, 850г, жирність 2.5%'),
 (4, 'Кефір безлактозний 2.5%', 'Яготинське', 'Кефір безлактозний, пляшка, 750г, жирність 2.5%'),
 (4, 'Айран 2%', 'Яготинське', 'Кисломолочний напій, пляшка, 450г, жирність 2%'),
 
--- Овочі (category_number = 5)
+-- Овочі category_number = 5
 (5, 'Капуста молода', 'Україна/Албанія', 'Свіжа молода капуста, 100г'),
 (5, 'Перець червоний', 'Україна', 'Свіжий червоний перець, 100г'),
 (5, 'Редиска', 'Україна', 'Свіжа редиска, 100г'),
@@ -100,7 +100,7 @@ INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic
 ('4567890123456', 'Коваль', 'Юлія', 'Андріївна', '+380661234567', 'Харків', 'Сумська 15', '61000', 7),
 ('5678901234567', 'Бондаренко', 'Тарас', 'Олегович', '+380731234567', 'Дніпро', 'Гагаріна 22', '49000', 5);
 
--- Касир (пароль: cashier123 — замінити хеш перед виконанням!)
+-- Касир пароль: cashier123 — замінити хеш перед виконанням
 INSERT INTO employee (id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, date_of_birth, date_of_start, phone_number, city, street, zip_code, password_hash)
 VALUES (
     'C001',
@@ -116,4 +116,22 @@ VALUES (
     'Лесі Українки 10',
     '01133',
     '$2b$12$wEHmJTrvEE3j4/sjAmtb8efY0HgVNkR.KMuDVU3EIoPXVVSOM9paaE'
+);
+
+-- Менеджер пароль: manager123
+INSERT INTO employee (id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, date_of_birth, date_of_start, phone_number, city, street, zip_code, password_hash)
+VALUES (
+    'M001',
+    'Ікарі',
+    'Шінджі',
+    'Ґендович',
+    'Manager',
+    15000.00,
+    '1988-03-20',
+    '2019-01-15',
+    '+380992222222',
+    'Київ',
+    'Хрещатик 1',
+    '01001',
+    '$2b$12$1uv5yZQbRXHnEQCeElMSN.CJkP2G2SMSNoGyDaWRN.ZG2P2IOLrxK'
 );
