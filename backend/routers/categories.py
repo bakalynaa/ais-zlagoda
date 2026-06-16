@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from database import get_connection
-from dependencies import require_manager
+from dependencies import require_manager, get_current_user
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -11,15 +11,36 @@ class CategoryCreate(BaseModel):
 class CategoryUpdate(BaseModel):
     category_name: str
 
+def _row_to_dict(row):
+    keys = ["category_number", "category_name"]
+    return dict(zip(keys, row))
+
 @router.get("/")
-def get_all_categories(user=Depends(require_manager)):
+def get_all_categories(user=Depends(get_current_user)):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT category_number, category_name FROM Category ORDER BY category_name")
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_row_to_dict(r) for r in rows]
+
+
+@router.get("/{category_number}")
+def get_category(category_number: int, user=Depends(get_current_user)):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT category_number, category_name FROM Category WHERE category_number = %s",
+        (category_number,)
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Категорію не знайдено")
+    return _row_to_dict(row)
+
 
 @router.post("/")
 def create_category(data: CategoryCreate, user=Depends(require_manager)):
@@ -61,6 +82,7 @@ def update_category(category_number: int, data: CategoryUpdate, user=Depends(req
         cur.close()
         conn.close()
     return {"message": "Категорію оновлено"}
+
 
 @router.delete("/{category_number}")
 def delete_category(category_number: int, user=Depends(require_manager)):

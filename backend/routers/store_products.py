@@ -19,6 +19,19 @@ class StoreProductUpdate(BaseModel):
     products_number: Optional[int] = None
 
 
+LIST_COLS = ["UPC", "UPC_prom", "selling_price", "products_number",
+             "promotional_product", "product_name", "manufacturer", "characteristics"]
+
+DETAIL_COLS = ["UPC", "selling_price", "products_number", "promotional_product",
+               "product_name", "manufacturer", "characteristics"]
+
+def _list_row(row):
+    return dict(zip(LIST_COLS, row))
+
+def _detail_row(row):
+    return dict(zip(DETAIL_COLS, row))
+
+
 def _get_store_product(cur, upc: str):
     cur.execute(
         "SELECT UPC, UPC_prom, id_product, selling_price, products_number, promotional_product "
@@ -42,7 +55,8 @@ def get_all_store_products(user=Depends(get_current_user)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_list_row(r) for r in rows]
+
 
 @router.get("/by-name")
 def get_store_products_by_name(user=Depends(get_current_user)):
@@ -58,7 +72,8 @@ def get_store_products_by_name(user=Depends(get_current_user)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_list_row(r) for r in rows]
+
 
 @router.get("/promotional")
 def get_promotional(sort: str = "count", user=Depends(get_current_user)):
@@ -76,7 +91,8 @@ def get_promotional(sort: str = "count", user=Depends(get_current_user)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_list_row(r) for r in rows]
+
 
 @router.get("/non-promotional")
 def get_non_promotional(sort: str = "count", user=Depends(get_current_user)):
@@ -94,7 +110,8 @@ def get_non_promotional(sort: str = "count", user=Depends(get_current_user)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_list_row(r) for r in rows]
+
 
 @router.get("/{upc}")
 def get_store_product(upc: str, user=Depends(get_current_user)):
@@ -113,7 +130,8 @@ def get_store_product(upc: str, user=Depends(get_current_user)):
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="Товар у магазині не знайдено")
-    return row
+    return _detail_row(row)
+
 
 @router.post("/")
 def create_store_product(data: StoreProductCreate, user=Depends(require_manager)):
@@ -175,6 +193,7 @@ def create_store_product(data: StoreProductCreate, user=Depends(require_manager)
         conn.close()
     return {"message": "Товар у магазині додано"}
 
+
 @router.put("/{upc}")
 def update_store_product(upc: str, data: StoreProductUpdate, user=Depends(require_manager)):
     conn = get_connection()
@@ -225,6 +244,7 @@ def update_store_product(upc: str, data: StoreProductUpdate, user=Depends(requir
         cur.close()
         conn.close()
     return {"message": "Товар у магазині оновлено"}
+
 
 @router.delete("/{upc}")
 def delete_store_product(upc: str, user=Depends(require_manager)):

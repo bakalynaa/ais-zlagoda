@@ -18,6 +18,14 @@ class ProductUpdate(BaseModel):
     manufacturer: Optional[str] = None
     characteristics: Optional[str] = None
 
+
+PRODUCT_COLS = ["id_product", "product_name", "manufacturer", "characteristics",
+                "category_number", "category_name"]
+
+def _row_to_dict(row):
+    return dict(zip(PRODUCT_COLS, row))
+
+
 @router.get("/")
 def get_all_products(category_number: Optional[int] = None, user=Depends(get_current_user)):
     conn = get_connection()
@@ -43,7 +51,8 @@ def get_all_products(category_number: Optional[int] = None, user=Depends(get_cur
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_row_to_dict(r) for r in rows]
+
 
 @router.get("/search")
 def search_products(name: str, user=Depends(get_current_user)):
@@ -61,10 +70,11 @@ def search_products(name: str, user=Depends(get_current_user)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_row_to_dict(r) for r in rows]
+
 
 @router.get("/{id_product}")
-def get_product(id_product: int, user=Depends(require_manager)):
+def get_product(id_product: int, user=Depends(get_current_user)):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -80,7 +90,8 @@ def get_product(id_product: int, user=Depends(require_manager)):
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="Товар не знайдено")
-    return row
+    return _row_to_dict(row)
+
 
 @router.post("/")
 def create_product(data: ProductCreate, user=Depends(require_manager)):
@@ -102,6 +113,7 @@ def create_product(data: ProductCreate, user=Depends(require_manager)):
         conn.close()
     return {"id_product": id_product, "message": "Товар додано"}
 
+
 @router.put("/{id_product}")
 def update_product(id_product: int, data: ProductUpdate, user=Depends(require_manager)):
     conn = get_connection()
@@ -110,8 +122,8 @@ def update_product(id_product: int, data: ProductUpdate, user=Depends(require_ma
         cur.execute(
             """UPDATE Product
                SET category_number = COALESCE(%s, category_number),
-                   product_name    = COALESCE(%s, product_name),
-                   manufacturer    = COALESCE(%s, manufacturer),
+                   product_name = COALESCE(%s, product_name),
+                   manufacturer = COALESCE(%s, manufacturer),
                    characteristics = COALESCE(%s, characteristics)
                WHERE id_product = %s""",
             (data.category_number, data.product_name, data.manufacturer,
@@ -129,6 +141,7 @@ def update_product(id_product: int, data: ProductUpdate, user=Depends(require_ma
         cur.close()
         conn.close()
     return {"message": "Товар оновлено"}
+
 
 @router.delete("/{id_product}")
 def delete_product(id_product: int, user=Depends(require_manager)):

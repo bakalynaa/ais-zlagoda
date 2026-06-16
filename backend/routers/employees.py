@@ -1,12 +1,20 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from database import get_connection
 from dependencies import require_manager, get_current_user
 import bcrypt
 from typing import Optional
 from datetime import date
+import re
 
 router = APIRouter(prefix="/employees", tags=["employees"])
+
+PHONE_RE = re.compile(r'^\+\d{1,12}$')
+
+def validate_phone(v: str) -> str:
+    if v and not PHONE_RE.match(v):
+        raise ValueError("Телефон повинен починатись з '+' і містити не більше 13 символів (наприклад +380991234567)")
+    return v
 
 class EmployeeCreate(BaseModel):
     id_employee: str
@@ -23,6 +31,11 @@ class EmployeeCreate(BaseModel):
     zip_code: str
     password: str
 
+    @field_validator("phone_number")
+    @classmethod
+    def check_phone(cls, v):
+        return validate_phone(v)
+
 class EmployeeUpdate(BaseModel):
     empl_surname: Optional[str] = None
     empl_name: Optional[str] = None
@@ -36,47 +49,105 @@ class EmployeeUpdate(BaseModel):
     street: Optional[str] = None
     zip_code: Optional[str] = None
 
+    @field_validator("phone_number")
+    @classmethod
+    def check_phone(cls, v):
+        if v is None:
+            return v
+        return validate_phone(v)
+
+
+FULL_COLS = ["id_employee", "empl_surname", "empl_name", "empl_patronymic", "empl_role",
+             "salary", "date_of_birth", "date_of_start", "phone_number", "city", "street", "zip_code"]
+CONTACT_COLS = ["id_employee", "empl_surname", "empl_name", "empl_patronymic",
+                "phone_number", "city", "street", "zip_code"]
+
+def _full_row(row):
+    return dict(zip(FULL_COLS, row))
+
+def _contact_row(row):
+    return dict(zip(CONTACT_COLS, row))
+
+
 @router.get("/")
 def get_all_employees(user=Depends(require_manager)):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, date_of_birth, date_of_start, phone_number, city, street, zip_code FROM employee ORDER BY empl_surname")
+    cur.execute(
+        "SELECT id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, "
+        "date_of_birth, date_of_start, phone_number, city, street, zip_code "
+        "FROM employee ORDER BY empl_surname"
+    )
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_full_row(r) for r in rows]
+
 
 @router.get("/cashiers")
 def get_cashiers(user=Depends(require_manager)):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id_employee, empl_surname, empl_name, empl_patronymic, phone_number, city, street, zip_code FROM employee WHERE empl_role = 'Cashier' ORDER BY empl_surname")
+    cur.execute(
+        "SELECT id_employee, empl_surname, empl_name, empl_patronymic, "
+        "phone_number, city, street, zip_code "
+        "FROM employee WHERE empl_role = 'Cashier' ORDER BY empl_surname"
+    )
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return [_contact_row(r) for r in rows]
+
 
 @router.get("/me")
 def get_me(user=Depends(get_current_user)):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, date_of_birth, date_of_start, phone_number, city, street, zip_code FROM employee WHERE id_employee = %s", (user["id"],))
+    cur.execute(
+        "SELECT id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, "
+        "date_of_birth, date_of_start, phone_number, city, street, zip_code "
+        "FROM employee WHERE id_employee = %s",
+        (user["id"],)
+    )
     row = cur.fetchone()
     cur.close()
     conn.close()
-    return row
+    return _full_row(row) if row else {}
+
+
+@router.get("/by-surname")
+def get_employee_by_surname(surname: str, user=Depends(require_manager)):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id_employee, empl_surname, empl_name, empl_patronymic, "
+        "phone_number, city, street, zip_code "
+        "FROM employee WHERE empl_surname ILIKE %s ORDER BY empl_surname",
+        (f"%{surname}%",)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [_contact_row(r) for r in rows]
+
 
 @router.get("/{id_employee}")
 def get_employee(id_employee: str, user=Depends(require_manager)):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id_employee, empl_surname, empl_name, phone_number, city, street, zip_code FROM employee WHERE id_employee = %s", (id_employee,))
+    cur.execute(
+        "SELECT id_employee, empl_surname, empl_name, empl_patronymic, "
+        "phone_number, city, street, zip_code "
+        "FROM employee WHERE id_employee = %s",
+        (id_employee,)
+    )
     row = cur.fetchone()
     cur.close()
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="Працівника не знайдено")
-    return row
+    return _contact_row(row)
+
 
 @router.post("/")
 def create_employee(data: EmployeeCreate, user=Depends(require_manager)):
@@ -98,6 +169,7 @@ def create_employee(data: EmployeeCreate, user=Depends(require_manager)):
         cur.close()
         conn.close()
     return {"message": "Працівника додано"}
+
 
 @router.put("/{id_employee}")
 def update_employee(id_employee: str, data: EmployeeUpdate, user=Depends(require_manager)):
@@ -121,6 +193,7 @@ def update_employee(id_employee: str, data: EmployeeUpdate, user=Depends(require
         cur.close()
         conn.close()
     return {"message": "Працівника оновлено"}
+
 
 @router.delete("/{id_employee}")
 def delete_employee(id_employee: str, user=Depends(require_manager)):
