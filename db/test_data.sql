@@ -100,7 +100,7 @@ INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic
 ('4567890123456', 'Коваль', 'Юлія', 'Андріївна', '+380661234567', 'Харків', 'Сумська 15', '61000', 7),
 ('5678901234567', 'Бондаренко', 'Тарас', 'Олегович', '+380731234567', 'Дніпро', 'Гагаріна 22', '49000', 5);
 
--- Касир пароль: cashier123 — замінити хеш перед виконанням
+-- Касир пароль: cashier123
 INSERT INTO employee (id_employee, empl_surname, empl_name, empl_patronymic, empl_role, salary, date_of_birth, date_of_start, phone_number, city, street, zip_code, password_hash)
 VALUES (
     'C001',
@@ -115,7 +115,7 @@ VALUES (
     'Київ',
     'Лесі Українки 10',
     '01133',
-    '$2b$12$wEHmJTrvEE3j4/sjAmtb8efY0HgVNkR.KMuDVU3EIoPXVVSOM9paaE'
+    '$2b$12$k8ByQtBV.MeaRCjsYx3O1O4sagtbR7L1RY11/MqvISwZa6LFFrg2G'
 );
 
 -- Менеджер пароль: manager123
