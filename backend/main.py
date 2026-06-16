@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, employees, categories, products, store_products, customers, checks, statistics
+from routers import auth, employees, categories, products, store_products, customers, checks, statistics, reports
 
 app = FastAPI(title="AIS Zlagoda")
 
@@ -20,6 +20,7 @@ app.include_router(store_products.router)
 app.include_router(customers.router)
 app.include_router(checks.router)
 app.include_router(statistics.router)
+app.include_router(reports.router)
 
 @app.get("/")
 def root():
