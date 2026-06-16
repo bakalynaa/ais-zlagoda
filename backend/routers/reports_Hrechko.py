@@ -87,4 +87,3 @@ def cashiers_sold_all_in_category(
 
     return [dict(zip(columns, row)) for row in rows]
 
-
