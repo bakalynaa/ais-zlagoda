@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { getStoreProducts, deleteStoreProduct, createStoreProduct, updateStoreProduct } from '../api/store_products';
 import { getProducts } from '../api/products';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface StoreProduct {
   UPC: string;
@@ -38,6 +39,7 @@ const field = (label: string, children: React.ReactNode, required = false) => (
 );
 
 export default function StoreProductsPage() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +88,7 @@ export default function StoreProductsPage() {
   };
 
   const handleDelete = (upc: string) => {
-    if (confirm('Видалити товар з магазину?')) {
+    if (confirm(t('deleteStoreProductConfirm'))) {
       deleteStoreProduct(upc).then(() => fetchProducts());
     }
   };
@@ -132,7 +134,7 @@ export default function StoreProductsPage() {
     setTouched(allTouched);
     const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
     if (hasEmpty) {
-      setError("Заповніть всі обов'язкові поля");
+      setError(t('fillRequired'));
       return;
     }
     setError('');
@@ -159,7 +161,7 @@ export default function StoreProductsPage() {
       if (Array.isArray(detail)) {
         setError(detail.map((e: any) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка');
+        setError(detail || t('errorGeneric'));
       }
     }
   };
@@ -172,33 +174,33 @@ export default function StoreProductsPage() {
 
   return (
     <Layout>
-      <h1>Товари в магазині</h1>
+      <h1>{t('storeProductsTitle')}</h1>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={() => handleFilter('all')}>Всі</button>
-        <button onClick={() => handleFilter('promotional')}>Акційні</button>
-        <button onClick={() => handleFilter('non-promotional')}>Не акційні</button>
+        <button onClick={() => handleFilter('all')}>{t('filterAll')}</button>
+        <button onClick={() => handleFilter('promotional')}>{t('filterPromotional')}</button>
+        <button onClick={() => handleFilter('non-promotional')}>{t('filterNonPromotional')}</button>
         <input
           className="search-input"
           type="text"
-          placeholder="Пошук за UPC..."
+          placeholder={t('searchByUpc')}
           value={upcSearch}
           onChange={(e) => setUpcSearch(e.target.value)}
         />
         <button onClick={() => { setEditUPC(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
-          {showForm && !editUPC ? 'Скасувати' : '+ Додати товар'}
+          {showForm && !editUPC ? t('cancel') : t('addProduct')}
         </button>
       </div>
 
       {showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>{editUPC ? 'Редагувати товар у магазині' : 'Новий товар у магазині'}</h3>
+          <h3>{editUPC ? t('editStoreProduct') : t('newStoreProduct')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {!editUPC && field('Товар', (
+            {!editUPC && field(t('product'), (
               <select style={inputStyle('id_product')} value={form.id_product} onChange={e => {
                 const id = e.target.value;
                 setForm({...form, id_product: id, UPC: ''});
               }}>
-                <option value="">— Оберіть товар —</option>
+                <option value="">{t('selectProduct')}</option>
                 {allProducts.map(p => (
                   <option key={p.id_product} value={p.id_product}>{p.product_name}</option>
                 ))}
@@ -209,41 +211,41 @@ export default function StoreProductsPage() {
                 <input style={inputStyle('UPC')} value={form.UPC} onChange={e => setForm({...form, UPC: e.target.value})} />
                 {selectedProduct && (
                   <small style={{ color: '#666' }}>
-                    Підказка: UPC має починатись з {selectedProduct.category_number} ({selectedProduct.category_name})
+                    {t('upcHint', { categoryId: selectedProduct.category_number ?? '', categoryName: selectedProduct.category_name ?? '' })}
                   </small>
                 )}
               </div>
             ), true)}
-            {field('Ціна продажу', <input style={inputStyle('selling_price')} type="number" value={form.selling_price} onChange={e => setForm({...form, selling_price: e.target.value})} />, true)}
-            {field('Кількість', <input style={inputStyle('products_number')} type="number" value={form.products_number} onChange={e => setForm({...form, products_number: e.target.value})} />, true)}
-            {!editUPC && field('Акційний товар', (
+            {field(t('sellingPrice'), <input style={inputStyle('selling_price')} type="number" value={form.selling_price} onChange={e => setForm({...form, selling_price: e.target.value})} />, true)}
+            {field(t('quantity'), <input style={inputStyle('products_number')} type="number" value={form.products_number} onChange={e => setForm({...form, products_number: e.target.value})} />, true)}
+            {!editUPC && field(t('promotionalProduct'), (
               <select style={inputStyle('promotional_product')} value={String(form.promotional_product)} onChange={e => setForm({...form, promotional_product: e.target.value === 'true'})}>
-                <option value="false">Ні</option>
-                <option value="true">Так</option>
+                <option value="false">{t('no')}</option>
+                <option value="true">{t('yes')}</option>
               </select>
             ))}
-            {!editUPC && form.promotional_product && field('UPC звичайного товару', <input style={inputStyle('UPC_prom')} value={form.UPC_prom} onChange={e => setForm({...form, UPC_prom: e.target.value})} />)}
+            {!editUPC && form.promotional_product && field(t('regularUpc'), <input style={inputStyle('UPC_prom')} value={form.UPC_prom} onChange={e => setForm({...form, UPC_prom: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-            <button onClick={handleSubmit}>Зберегти</button>
-            <button onClick={handleCancel}>Скасувати</button>
+            <button onClick={handleSubmit}>{t('save')}</button>
+            <button onClick={handleCancel}>{t('cancel')}</button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <p>Завантаження...</p>
+        <p>{t('loading')}</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
               <th>UPC</th>
-              <th>Назва</th>
-              <th>Ціна</th>
-              <th>Кількість</th>
-              <th>Акційний</th>
-              <th>Дії</th>
+              <th>{t('name')}</th>
+              <th>{t('price')}</th>
+              <th>{t('quantity')}</th>
+              <th>{t('promotional')}</th>
+              <th>{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -251,19 +253,19 @@ export default function StoreProductsPage() {
               <tr key={p.UPC}>
                 <td>{p.UPC}</td>
                 <td>{p.product_name}</td>
-                <td>{p.selling_price} грн</td>
+                <td>{p.selling_price} {t('currency')}</td>
                 <td>{p.products_number}</td>
                 <td>{p.promotional_product ? '+' : '-'}</td>
                 <td style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => handleEdit(p)}>Редагувати</button>
-                  <button onClick={() => handleDelete(p.UPC)}>Видалити</button>
+                  <button onClick={() => handleEdit(p)}>{t('edit')}</button>
+                  <button onClick={() => handleDelete(p.UPC)}>{t('delete')}</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      {!loading && filtered.length === 0 && <p>Товарів не знайдено</p>}
+      {!loading && filtered.length === 0 && <p>{t('productsEmpty')}</p>}
     </Layout>
   );
 }

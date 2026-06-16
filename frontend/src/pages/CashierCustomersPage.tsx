@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { getCustomers, createCustomer, updateCustomer } from '../api/customers';
 import CityInput from '../components/CityInput';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface Customer {
   card_number: string;
@@ -37,6 +38,7 @@ const field = (label: string, children: React.ReactNode, required = false) => (
 );
 
 export default function CashierCustomersPage() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -50,16 +52,16 @@ export default function CashierCustomersPage() {
     setLoading(true);
     getCustomers(surname)
       .then((data) => {
-        const mapped = data.map((row: any[]) => ({
-          card_number: row[0],
-          cust_surname: row[1],
-          cust_name: row[2],
-          cust_patronymic: row[3],
-          phone_number: row[4],
-          city: row[5],
-          street: row[6],
-          zip_code: row[7],
-          percent: row[8],
+        const mapped = data.map((row: unknown[]) => ({
+          card_number: row[0] as string,
+          cust_surname: row[1] as string,
+          cust_name: row[2] as string,
+          cust_patronymic: row[3] as string | null,
+          phone_number: row[4] as string,
+          city: row[5] as string | null,
+          street: row[6] as string | null,
+          zip_code: row[7] as string | null,
+          percent: row[8] as number,
         }));
         setCustomers(mapped);
       })
@@ -111,11 +113,11 @@ export default function CashierCustomersPage() {
   });
 
   const handleSubmit = async () => {
-    const allTouched = Object.fromEntries(requiredFields.map(f => [f, true]));
+    const allTouched = Object.fromEntries(requiredFields.map((f) => [f, true]));
     setTouched(allTouched);
-    const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
+    const hasEmpty = requiredFields.some((f) => !form[f as keyof typeof form]);
     if (hasEmpty) {
-      setError("Заповніть всі обов'язкові поля");
+      setError(t('fillRequired'));
       return;
     }
     setError('');
@@ -129,99 +131,112 @@ export default function CashierCustomersPage() {
           city: form.city || null,
           street: form.street || null,
           zip_code: form.zip_code || null,
-          percent: parseInt(form.percent),
+          percent: parseInt(form.percent, 10),
         });
       } else {
         await createCustomer({
           ...form,
-          percent: parseInt(form.percent),
+          percent: parseInt(form.percent, 10),
         });
       }
       handleCancel();
       fetchCustomers();
-    } catch (err: any) {
-      const detail = err.response?.data?.detail;
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
       if (Array.isArray(detail)) {
-        setError(detail.map((e: any) => e.msg).join(', '));
+        setError(detail.map((e: { msg: string }) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка');
+        setError(typeof detail === 'string' ? detail : t('errorGeneric'));
       }
     }
   };
 
   return (
     <Layout>
-      <h1>Клієнти</h1>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <input
-          className="search-input"
-          type="text"
-          placeholder="Пошук за прізвищем..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button onClick={() => fetchCustomers(search || undefined)}>Знайти</button>
-        <button onClick={() => { setSearch(''); fetchCustomers(); }}>Скинути</button>
-        <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
-          {showForm && !editId ? 'Скасувати' : '+ Додати клієнта'}
-        </button>
-      </div>
-
-      {showForm && (
-        <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>{editId ? 'Редагувати клієнта' : 'Новий клієнт'}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {!editId && field('Номер карти', <input style={inputStyle('card_number')} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />, true)}
-            {field('Прізвище', <input style={inputStyle('cust_surname')} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />, true)}
-            {field("Ім'я", <input style={inputStyle('cust_name')} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />, true)}
-            {field('По батькові', <input style={inputStyle('cust_patronymic')} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
-            {field('Телефон', <input style={inputStyle('phone_number')} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />, true)}
-            {field('% знижки', <input style={inputStyle('percent')} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />, true)}
-            {field('Місто', <CityInput style={inputStyle('city')} value={form.city} onChange={val => setForm({...form, city: val})} />)}
-            {field('Вулиця', <input style={inputStyle('street')} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
-            {field('Індекс', <input style={inputStyle('zip_code')} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
-          </div>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-            <button onClick={handleSubmit}>Зберегти</button>
-            <button onClick={handleCancel}>Скасувати</button>
-          </div>
+      <section className="manager-page">
+        <div className="manager-page-header">
+          <h1>{t('customersTitle')}</h1>
+          <button
+            type="button"
+            className={`manager-action-btn ${showForm ? 'manager-action-btn--ghost' : 'manager-action-btn--primary'}`}
+            onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}
+          >
+            {showForm && !editId ? t('cancel') : t('addCustomer')}
+          </button>
         </div>
-      )}
 
-      {loading ? (
-        <p>Завантаження...</p>
-      ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Номер карти</th>
-              <th>Прізвище</th>
-              <th>Ім'я</th>
-              <th>Телефон</th>
-              <th>Місто</th>
-              <th>Знижка</th>
-              <th>Дії</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr key={c.card_number}>
-                <td>{c.card_number}</td>
-                <td>{c.cust_surname}</td>
-                <td>{c.cust_name}</td>
-                <td>{c.phone_number}</td>
-                <td>{c.city || '—'}</td>
-                <td>{c.percent}%</td>
-                <td>
-                  <button onClick={() => handleEdit(c)}>Редагувати</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {!loading && customers.length === 0 && <p>Клієнтів не знайдено</p>}
+        <div className="manager-inline-form">
+          <input
+            className="search-input manager-field-input"
+            type="text"
+            placeholder={t('searchBySurname')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button type="button" onClick={() => fetchCustomers(search || undefined)}>{t('search')}</button>
+          <button type="button" onClick={() => { setSearch(''); fetchCustomers(); }}>{t('reset')}</button>
+        </div>
+
+        {showForm && (
+          <div style={{ border: '1px solid var(--border-soft)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+            <h3>{editId ? t('editCustomer') : t('newCustomer')}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {!editId && field(t('cardNumber'), <input style={inputStyle('card_number')} value={form.card_number} onChange={(e) => setForm({ ...form, card_number: e.target.value })} />, true)}
+              {field(t('surname'), <input style={inputStyle('cust_surname')} value={form.cust_surname} onChange={(e) => setForm({ ...form, cust_surname: e.target.value })} />, true)}
+              {field(t('firstName'), <input style={inputStyle('cust_name')} value={form.cust_name} onChange={(e) => setForm({ ...form, cust_name: e.target.value })} />, true)}
+              {field(t('patronymic'), <input style={inputStyle('cust_patronymic')} value={form.cust_patronymic} onChange={(e) => setForm({ ...form, cust_patronymic: e.target.value })} />)}
+              {field(t('phone'), <input style={inputStyle('phone_number')} value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} />, true)}
+              {field(t('discountPercent'), <input style={inputStyle('percent')} type="number" value={form.percent} onChange={(e) => setForm({ ...form, percent: e.target.value })} />, true)}
+              {field(t('city'), <CityInput style={inputStyle('city')} value={form.city} onChange={(val) => setForm({ ...form, city: val })} />)}
+              {field(t('street'), <input style={inputStyle('street')} value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} />)}
+              {field(t('zipCode'), <input style={inputStyle('zip_code')} value={form.zip_code} onChange={(e) => setForm({ ...form, zip_code: e.target.value })} />)}
+            </div>
+            {error && <p className="manager-field-error">{error}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+              <button type="button" className="manager-action-btn manager-action-btn--primary" onClick={handleSubmit}>{t('save')}</button>
+              <button type="button" className="manager-action-btn manager-action-btn--ghost" onClick={handleCancel}>{t('cancel')}</button>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <p className="manager-status">{t('loading')}</p>
+        ) : (
+          <div className="manager-table-wrap">
+            <table className="manager-table data-table">
+              <thead>
+                <tr>
+                  <th>{t('cardNumber')}</th>
+                  <th>{t('surname')}</th>
+                  <th>{t('firstName')}</th>
+                  <th>{t('phone')}</th>
+                  <th>{t('city')}</th>
+                  <th>{t('discount')}</th>
+                  <th>{t('actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customers.map((c) => (
+                  <tr key={c.card_number}>
+                    <td>{c.card_number}</td>
+                    <td>{c.cust_surname}</td>
+                    <td>{c.cust_name}</td>
+                    <td>{c.phone_number}</td>
+                    <td>{c.city || t('dash')}</td>
+                    <td>{c.percent}%</td>
+                    <td>
+                      <button type="button" className="manager-action-btn manager-action-btn--ghost" onClick={() => handleEdit(c)}>
+                        {t('edit')}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!loading && customers.length === 0 && <p className="manager-empty">{t('customersEmpty')}</p>}
+      </section>
     </Layout>
   );
 }

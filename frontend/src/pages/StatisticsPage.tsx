@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { apiClient } from '../api/client';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function StatisticsPage() {
+  const { t } = useLanguage();
   const [cashierId, setCashierId] = useState('');
   const [upc, setUpc] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -45,59 +47,59 @@ export default function StatisticsPage() {
 
   return (
     <Layout>
-      <h1>Статистика</h1>
+      <h1>{t('statisticsTitle')}</h1>
 
       <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #eee', borderRadius: '8px' }}>
-        <h2>Період</h2>
+        <h2>{t('period')}</h2>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <label>З: <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
-          <label>По: <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
+          <label>{t('from')} <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
+          <label>{t('to')} <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
         <div style={{ padding: '1rem', border: '1px solid #eee', borderRadius: '8px' }}>
-          <h3>Продажі касира</h3>
+          <h3>{t('cashierSales')}</h3>
           <input
             type="text"
-            placeholder="ID касира"
+            placeholder={t('cashierIdPlaceholder')}
             value={cashierId}
             onChange={(e) => setCashierId(e.target.value)}
             style={{ width: '100%', marginBottom: '0.5rem', padding: '0.5rem' }}
           />
-          <button onClick={fetchCashierTotal} style={{ width: '100%' }}>Отримати</button>
+          <button onClick={fetchCashierTotal} style={{ width: '100%' }}>{t('get')}</button>
         </div>
 
         <div style={{ padding: '1rem', border: '1px solid #eee', borderRadius: '8px' }}>
-          <h3>Продажі всіх касирів</h3>
-          <button onClick={fetchAllTotal} style={{ width: '100%', marginTop: '2.5rem' }}>Отримати</button>
+          <h3>{t('allCashierSales')}</h3>
+          <button onClick={fetchAllTotal} style={{ width: '100%', marginTop: '2.5rem' }}>{t('get')}</button>
         </div>
 
         <div style={{ padding: '1rem', border: '1px solid #eee', borderRadius: '8px' }}>
-          <h3>Кількість товару</h3>
+          <h3>{t('productCount')}</h3>
           <input
             type="text"
-            placeholder="UPC товару"
+            placeholder={t('upcPlaceholder')}
             value={upc}
             onChange={(e) => setUpc(e.target.value)}
             style={{ width: '100%', marginBottom: '0.5rem', padding: '0.5rem' }}
           />
-          <button onClick={fetchProductCount} style={{ width: '100%' }}>Отримати</button>
+          <button onClick={fetchProductCount} style={{ width: '100%' }}>{t('get')}</button>
         </div>
       </div>
 
-      {loading && <p>Завантаження...</p>}
+      {loading && <p>{t('loading')}</p>}
 
       {result && !loading && (
         <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px', background: '#f9f9f9' }}>
           {result.type === 'cashier' && (
-            <p>Загальна сума продажів касира <strong>{result.cashier_id}</strong>: <strong>{result.total} грн</strong></p>
+            <p>{t('cashierTotalResult', { id: result.cashier_id, total: result.total })}</p>
           )}
           {result.type === 'all' && (
-            <p>Загальна сума продажів всіх касирів: <strong>{result.total} грн</strong></p>
+            <p>{t('allTotalResult', { total: result.total })}</p>
           )}
           {result.type === 'product' && (
-            <p>Продано одиниць товару <strong>{result.upc}</strong>: <strong>{result.total_sold}</strong></p>
+            <p>{t('productSoldResult', { upc: result.upc, count: result.total_sold })}</p>
           )}
         </div>
       )}

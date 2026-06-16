@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { getProducts, createProduct, deleteProduct, updateProduct } from '../api/products';
 import { getCategories } from '../api/categories';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface Product {
   id_product: number;
@@ -34,6 +36,9 @@ const field = (label: string, children: React.ReactNode, required = false) => (
 );
 
 export default function ProductsPage() {
+  const { t } = useLanguage();
+  const location = useLocation();
+  const isCashierView = location.pathname.startsWith('/cashier');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
@@ -80,7 +85,7 @@ export default function ProductsPage() {
   }, [search, products]);
 
   const handleDelete = (id: number) => {
-    if (confirm('Видалити товар?')) {
+    if (confirm(t('deleteProductConfirm'))) {
       deleteProduct(id).then(fetchProducts);
     }
   };
@@ -122,7 +127,7 @@ export default function ProductsPage() {
     setTouched(allTouched);
     const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
     if (hasEmpty) {
-      setError("Заповніть всі обов'язкові поля");
+      setError(t('fillRequired'));
       return;
     }
     setError('');
@@ -147,63 +152,65 @@ export default function ProductsPage() {
       if (Array.isArray(detail)) {
         setError(detail.map((e: any) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка');
+        setError(detail || t('errorGeneric'));
       }
     }
   };
 
-  return (
-    <Layout>
-      <h1>Товари</h1>
+  const pageContent = (
+    <>
+      <div className={isCashierView ? 'manager-page-header' : undefined}>
+        <h1>{t('productsTitle')}</h1>
+      </div>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
         <input
           className="search-input"
           type="text"
-          placeholder="Пошук за назвою..."
+          placeholder={t('searchByName')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
-          {showForm && !editId ? 'Скасувати' : '+ Додати товар'}
+          {showForm && !editId ? t('cancel') : t('addProduct')}
         </button>
       </div>
 
       {showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>{editId ? 'Редагувати товар' : 'Новий товар'}</h3>
+          <h3>{editId ? t('editProduct') : t('newProduct')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {field('Категорія', (
+            {field(t('category'), (
               <select style={inputStyle('category_number')} value={form.category_number} onChange={e => setForm({...form, category_number: e.target.value})}>
-                <option value="">— Оберіть категорію —</option>
+                <option value="">{t('selectCategory')}</option>
                 {categories.map(c => (
                   <option key={c.category_number} value={c.category_number}>{c.category_name}</option>
                 ))}
               </select>
             ), true)}
-            {field('Назва', <input style={inputStyle('product_name')} value={form.product_name} onChange={e => setForm({...form, product_name: e.target.value})} />, true)}
-            {field('Виробник', <input style={inputStyle('manufacturer')} value={form.manufacturer} onChange={e => setForm({...form, manufacturer: e.target.value})} />, true)}
-            {field('Характеристики', <input style={inputStyle('characteristics')} value={form.characteristics} onChange={e => setForm({...form, characteristics: e.target.value})} />, true)}
+            {field(t('name'), <input style={inputStyle('product_name')} value={form.product_name} onChange={e => setForm({...form, product_name: e.target.value})} />, true)}
+            {field(t('manufacturer'), <input style={inputStyle('manufacturer')} value={form.manufacturer} onChange={e => setForm({...form, manufacturer: e.target.value})} />, true)}
+            {field(t('characteristics'), <input style={inputStyle('characteristics')} value={form.characteristics} onChange={e => setForm({...form, characteristics: e.target.value})} />, true)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-            <button onClick={handleSubmit}>Зберегти</button>
-            <button onClick={handleCancel}>Скасувати</button>
+            <button onClick={handleSubmit}>{t('save')}</button>
+            <button onClick={handleCancel}>{t('cancel')}</button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <p>Завантаження...</p>
+        <p>{t('loading')}</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>Назва</th>
-              <th>Виробник</th>
-              <th>Характеристики</th>
-              <th>Категорія</th>
-              <th>Дії</th>
+              <th>{t('name')}</th>
+              <th>{t('manufacturer')}</th>
+              <th>{t('characteristics')}</th>
+              <th>{t('category')}</th>
+              <th>{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -215,15 +222,21 @@ export default function ProductsPage() {
                 <td>{p.characteristics}</td>
                 <td>{p.category_name}</td>
                 <td style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => handleEdit(p)}>Редагувати</button>
-                  <button onClick={() => handleDelete(p.id_product)}>Видалити</button>
+                  <button onClick={() => handleEdit(p)}>{t('edit')}</button>
+                  <button onClick={() => handleDelete(p.id_product)}>{t('delete')}</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      {!loading && filtered.length === 0 && <p>Товарів не знайдено</p>}
+      {!loading && filtered.length === 0 && <p>{t('productsEmpty')}</p>}
+    </>
+  );
+
+  return (
+    <Layout>
+      {isCashierView ? <section className="manager-page">{pageContent}</section> : pageContent}
     </Layout>
   );
 }

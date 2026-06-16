@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import { getStoreProducts } from '../api/store_products';
 import { getCustomers } from '../api/customers';
 import { apiClient } from '../api/client';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface StoreProduct {
   UPC: string;
@@ -27,6 +28,7 @@ interface Customer {
 }
 
 export default function CashierPOSPage() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -39,25 +41,25 @@ export default function CashierPOSPage() {
   useEffect(() => {
     Promise.all([getStoreProducts(), getCustomers()])
       .then(([prods, custs]) => {
-        setProducts(prods.map((row: any[]) => ({
-          UPC: row[0],
-          selling_price: row[2],
-          products_number: row[3],
-          promotional_product: row[4],
-          product_name: row[5],
+        setProducts(prods.map((row: unknown[]) => ({
+          UPC: row[0] as string,
+          selling_price: row[2] as number,
+          products_number: row[3] as number,
+          promotional_product: row[4] as boolean,
+          product_name: row[5] as string,
         })));
-        setCustomers(custs.map((row: any[]) => ({
-          card_number: row[0],
-          cust_surname: row[1],
-          cust_name: row[2],
-          percent: row[8],
+        setCustomers(custs.map((row: unknown[]) => ({
+          card_number: row[0] as string,
+          cust_surname: row[1] as string,
+          cust_name: row[2] as string,
+          percent: row[8] as number,
         })));
       })
       .finally(() => setLoading(false));
   }, []);
 
   const filtered = products.filter((p) =>
-    p.product_name.toLowerCase().includes(search.toLowerCase())
+    p.product_name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const addToCart = (product: StoreProduct) => {
@@ -67,7 +69,7 @@ export default function CashierPOSPage() {
         return prev.map((item) =>
           item.UPC === product.UPC
             ? { ...item, quantity: item.quantity + 1 }
-            : item
+            : item,
         );
       }
       return [...prev, {
@@ -89,7 +91,7 @@ export default function CashierPOSPage() {
       return;
     }
     setCart((prev) =>
-      prev.map((item) => item.UPC === UPC ? { ...item, quantity } : item)
+      prev.map((item) => item.UPC === UPC ? { ...item, quantity } : item),
     );
   };
 
@@ -102,7 +104,7 @@ export default function CashierPOSPage() {
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
-      setError('Кошик порожній');
+      setError(t('cartEmptyError'));
       return;
     }
     try {
@@ -113,138 +115,163 @@ export default function CashierPOSPage() {
           product_number: item.quantity,
         })),
       });
-      setSuccess(`Чек створено! Сума: ${total.toFixed(2)} грн`);
+      setSuccess(t('checkCreatedSuccess', { total: total.toFixed(2) }));
       setCart([]);
       setSelectedCard('');
       setError('');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Помилка створення чека');
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : t('checkCreateError'));
     }
   };
 
   return (
     <Layout>
-      <h1>Каса</h1>
-      {loading ? <p>Завантаження...</p> : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          <div>
-            <h2>Товари</h2>
-            <input
-              className="search-input"
-              type="text"
-              placeholder="Пошук товару..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ marginBottom: '1rem' }}
-            />
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Назва</th>
-                    <th>Ціна</th>
-                    <th>К-сть</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((p) => (
-                    <tr key={p.UPC}>
-                      <td>{p.product_name} {p.promotional_product ? '(акція)' : ''}</td>
-                      <td>{p.selling_price} грн</td>
-                      <td>{p.products_number}</td>
-                      <td>
-                        <button
-                          onClick={() => addToCart(p)}
-                          disabled={p.products_number === 0}
-                        >
-                          +
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div>
-            <h2>Кошик</h2>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <label>Картка клієнта:</label>
-              <select
-                value={selectedCard}
-                onChange={(e) => setSelectedCard(e.target.value)}
-                style={{ marginLeft: '0.5rem', padding: '0.25rem' }}
-              >
-                <option value="">— без картки —</option>
-                {customers.map((c) => (
-                  <option key={c.card_number} value={c.card_number}>
-                    {c.cust_surname} {c.cust_name} ({c.percent}%)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {cart.length === 0 ? (
-              <p>Кошик порожній</p>
-            ) : (
-              <>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Назва</th>
-                      <th>Ціна</th>
-                      <th>К-сть</th>
-                      <th>Сума</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cart.map((item) => (
-                      <tr key={item.UPC}>
-                        <td>{item.product_name}</td>
-                        <td>{item.selling_price} грн</td>
-                        <td>
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.UPC, parseInt(e.target.value))}
-                            style={{ width: '60px' }}
-                          />
-                        </td>
-                        <td>{(item.selling_price * item.quantity).toFixed(2)} грн</td>
-                        <td>
-                          <button onClick={() => removeFromCart(item.UPC)}>✕</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-                  {discount > 0 && <p>Знижка: {discount}%</p>}
-                  <p><strong>Сума: {subtotal.toFixed(2)} грн</strong></p>
-                  {discount > 0 && <p><strong>До сплати: {total.toFixed(2)} грн</strong></p>}
-                </div>
-              </>
-            )}
-
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            {success && <p style={{ color: 'green' }}>{success}</p>}
-
-            <button
-              onClick={handleCheckout}
-              disabled={cart.length === 0}
-              style={{ marginTop: '1rem', width: '100%', padding: '0.75rem', fontSize: '1rem' }}
-            >
-              Оформити чек
-            </button>
-          </div>
+      <section className="manager-page cashier-pos">
+        <div className="manager-page-header">
+          <h1>{t('routeCashier')}</h1>
         </div>
-      )}
+
+        {loading ? (
+          <p className="manager-status">{t('loading')}</p>
+        ) : (
+          <div className="cashier-pos-grid">
+            <div className="cashier-pos-panel">
+              <h2>{t('productsTitle')}</h2>
+              <input
+                className="search-input manager-field-input"
+                type="text"
+                placeholder={t('searchProductPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <div className="cashier-pos-scroll">
+                <div className="manager-table-wrap">
+                  <table className="manager-table data-table">
+                    <thead>
+                      <tr>
+                        <th>{t('name')}</th>
+                        <th>{t('price')}</th>
+                        <th>{t('stockQty')}</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((p) => (
+                        <tr key={p.UPC}>
+                          <td>
+                            {p.product_name} {p.promotional_product ? t('promoBadge') : ''}
+                          </td>
+                          <td>{p.selling_price} {t('currency')}</td>
+                          <td>{p.products_number}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="manager-action-btn manager-action-btn--primary"
+                              onClick={() => addToCart(p)}
+                              disabled={p.products_number === 0}
+                            >
+                              +
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="cashier-pos-panel">
+              <h2>{t('posCartTitle')}</h2>
+
+              <div className="cashier-card-select">
+                <label htmlFor="customer-card">{t('customerCardLabel')}</label>
+                <select
+                  id="customer-card"
+                  value={selectedCard}
+                  onChange={(e) => setSelectedCard(e.target.value)}
+                >
+                  <option value="">{t('noCustomerCard')}</option>
+                  {customers.map((c) => (
+                    <option key={c.card_number} value={c.card_number}>
+                      {c.cust_surname} {c.cust_name} ({c.percent}%)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {cart.length === 0 ? (
+                <p className="manager-empty">{t('cartEmpty')}</p>
+              ) : (
+                <>
+                  <div className="manager-table-wrap">
+                    <table className="manager-table data-table">
+                      <thead>
+                        <tr>
+                          <th>{t('name')}</th>
+                          <th>{t('price')}</th>
+                          <th>{t('stockQty')}</th>
+                          <th>{t('subtotalLabel')}</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cart.map((item) => (
+                          <tr key={item.UPC}>
+                            <td>{item.product_name}</td>
+                            <td>{item.selling_price} {t('currency')}</td>
+                            <td>
+                              <input
+                                className="manager-field-input"
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => updateQuantity(item.UPC, parseInt(e.target.value, 10) || 0)}
+                                style={{ width: '60px', maxWidth: 'none' }}
+                              />
+                            </td>
+                            <td>{(item.selling_price * item.quantity).toFixed(2)} {t('currency')}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="manager-action-btn manager-action-btn--danger"
+                                onClick={() => removeFromCart(item.UPC)}
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="cashier-totals">
+                    {discount > 0 && <p>{t('discountLabel')}: {discount}%</p>}
+                    <p><strong>{t('subtotalLabel')}: {subtotal.toFixed(2)} {t('currency')}</strong></p>
+                    {discount > 0 && (
+                      <p><strong>{t('payableLabel')}: {total.toFixed(2)} {t('currency')}</strong></p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {error && <p className="cashier-msg-error">{error}</p>}
+              {success && <p className="cashier-msg-success">{success}</p>}
+
+              <button
+                type="button"
+                className="manager-action-btn manager-action-btn--primary cashier-checkout-btn"
+                onClick={handleCheckout}
+                disabled={cart.length === 0}
+              >
+                {t('checkoutBtn')}
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </Layout>
   );
 }

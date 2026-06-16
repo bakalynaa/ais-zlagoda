@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { getCustomers, deleteCustomer, createCustomer, updateCustomer } from '../api/customers';
 import CityInput from '../components/CityInput';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface Customer {
   card_number: string;
@@ -37,6 +38,7 @@ const field = (label: string, children: React.ReactNode, required = false) => (
 );
 
 export default function CustomersPage() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,7 +85,7 @@ export default function CustomersPage() {
   };
 
   const handleDelete = (cardNumber: string) => {
-    if (confirm('Видалити картку клієнта?')) {
+    if (confirm(t('deleteCustomerConfirm'))) {
       deleteCustomer(cardNumber).then(() => fetchCustomers());
     }
   };
@@ -132,7 +134,7 @@ export default function CustomersPage() {
     setTouched(allTouched);
     const hasEmpty = requiredFields.some(f => !form[f as keyof typeof form]);
     if (hasEmpty) {
-      setError("Заповніть всі обов'язкові поля!");
+      setError(t('fillRequired'));
       return;
     }
     setError('');
@@ -161,72 +163,72 @@ export default function CustomersPage() {
       if (Array.isArray(detail)) {
         setError(detail.map((e: any) => e.msg).join(', '));
       } else {
-        setError(detail || 'Помилка');
+        setError(detail || t('errorGeneric'));
       }
     }
   };
 
   return (
     <Layout>
-      <h1>Клієнти</h1>
+      <h1>{t('customersTitle')}</h1>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
         <input
           className="search-input"
           type="text"
-          placeholder="Пошук за прізвищем..."
+          placeholder={t('searchBySurname')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <input
           type="number"
-          placeholder="% знижки"
+          placeholder={t('discountPercent')}
           value={percent}
           onChange={(e) => setPercent(e.target.value)}
           style={{ width: '100px', padding: '0.5rem' }}
         />
-        <button onClick={handleSearch}>Знайти</button>
-        <button onClick={handleReset}>Скинути</button>
+        <button onClick={handleSearch}>{t('search')}</button>
+        <button onClick={handleReset}>{t('reset')}</button>
         <button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(!showForm); setError(''); setTouched({}); }}>
-          {showForm && !editId ? 'Скасувати' : '+ Додати клієнта'}
+          {showForm && !editId ? t('cancel') : t('addCustomer')}
         </button>
       </div>
 
       {showForm && (
         <div style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-          <h3>{editId ? 'Редагувати клієнта' : 'Новий клієнт'}</h3>
+          <h3>{editId ? t('editCustomer') : t('newCustomer')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            {!editId && field('Номер карти', <input style={inputStyle('card_number')} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />, true)}
-            {field('Прізвище', <input style={inputStyle('cust_surname')} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />, true)}
-            {field("Ім'я", <input style={inputStyle('cust_name')} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />, true)}
-            {field('По батькові', <input style={inputStyle('cust_patronymic')} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
-            {field('Телефон', <input style={inputStyle('phone_number')} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />, true)}
-            {field('% знижки', <input style={inputStyle('percent')} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />, true)}
-            {field('Місто', <CityInput style={inputStyle('city')} value={form.city} onChange={val => setForm({...form, city: val})} />)}
-            {field('Вулиця', <input style={inputStyle('street')} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
-            {field('Індекс', <input style={inputStyle('zip_code')} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
+            {!editId && field(t('cardNumber'), <input style={inputStyle('card_number')} value={form.card_number} onChange={e => setForm({...form, card_number: e.target.value})} />, true)}
+            {field(t('surname'), <input style={inputStyle('cust_surname')} value={form.cust_surname} onChange={e => setForm({...form, cust_surname: e.target.value})} />, true)}
+            {field(t('firstName'), <input style={inputStyle('cust_name')} value={form.cust_name} onChange={e => setForm({...form, cust_name: e.target.value})} />, true)}
+            {field(t('patronymic'), <input style={inputStyle('cust_patronymic')} value={form.cust_patronymic} onChange={e => setForm({...form, cust_patronymic: e.target.value})} />)}
+            {field(t('phone'), <input style={inputStyle('phone_number')} value={form.phone_number} onChange={e => setForm({...form, phone_number: e.target.value})} />, true)}
+            {field(t('discountPercent'), <input style={inputStyle('percent')} type="number" value={form.percent} onChange={e => setForm({...form, percent: e.target.value})} />, true)}
+            {field(t('city'), <CityInput style={inputStyle('city')} value={form.city} onChange={val => setForm({...form, city: val})} />)}
+            {field(t('street'), <input style={inputStyle('street')} value={form.street} onChange={e => setForm({...form, street: e.target.value})} />)}
+            {field(t('zipCode'), <input style={inputStyle('zip_code')} value={form.zip_code} onChange={e => setForm({...form, zip_code: e.target.value})} />)}
           </div>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-            <button onClick={handleSubmit}>Зберегти</button>
-            <button onClick={handleCancel}>Скасувати</button>
+            <button onClick={handleSubmit}>{t('save')}</button>
+            <button onClick={handleCancel}>{t('cancel')}</button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <p>Завантаження...</p>
+        <p>{t('loading')}</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Номер карти</th>
-              <th>Прізвище</th>
-              <th>Ім'я</th>
-              <th>По батькові</th>
-              <th>Телефон</th>
-              <th>Місто</th>
-              <th>Знижка</th>
-              <th>Дії</th>
+              <th>{t('cardNumber')}</th>
+              <th>{t('surname')}</th>
+              <th>{t('firstName')}</th>
+              <th>{t('patronymic')}</th>
+              <th>{t('phone')}</th>
+              <th>{t('city')}</th>
+              <th>{t('discount')}</th>
+              <th>{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -235,20 +237,20 @@ export default function CustomersPage() {
                 <td>{c.card_number}</td>
                 <td>{c.cust_surname}</td>
                 <td>{c.cust_name}</td>
-                <td>{c.cust_patronymic || '—'}</td>
+                <td>{c.cust_patronymic || t('dash')}</td>
                 <td>{c.phone_number}</td>
-                <td>{c.city || '—'}</td>
+                <td>{c.city || t('dash')}</td>
                 <td>{c.percent}%</td>
                 <td style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => handleEdit(c)}>Редагувати</button>
-                  <button onClick={() => handleDelete(c.card_number)}>Видалити</button>
+                  <button onClick={() => handleEdit(c)}>{t('edit')}</button>
+                  <button onClick={() => handleDelete(c.card_number)}>{t('delete')}</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      {!loading && customers.length === 0 && <p>Клієнтів не знайдено</p>}
+      {!loading && customers.length === 0 && <p>{t('customersEmpty')}</p>}
     </Layout>
   );
 }
