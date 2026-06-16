@@ -1,5 +1,35 @@
+# Supabase (хмара) — основний режим для команди
+# Локальний Postgres (db-сервіс) — опційно, профіль local-db
+
 services:
+  backend:
+    build: ./backend
+    container_name: zlagoda-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    container_name: zlagoda-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
+  # Локальна БД — лише якщо потрібен offline-режим:
+  # docker compose --profile local-db up -d
   db:
+    profiles:
+      - local-db
     image: postgres:16
     container_name: zlagoda-db
     environment:
@@ -17,33 +47,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
-  backend:
-    build: ./backend
-    container_name: zlagoda-backend
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/zlagoda
-      SECRET_KEY: zlagoda_dev_secret
-    volumes:
-      - ./backend:/app
-    depends_on:
-      db:
-        condition: service_healthy
-
-  frontend:
-    build: ./frontend
-    container_name: zlagoda-frontend
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:8000
-    volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
-    depends_on:
-      - backend
 
 volumes:
   zlagoda_pgdata:
