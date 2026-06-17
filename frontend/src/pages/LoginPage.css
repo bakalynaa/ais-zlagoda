@@ -106,6 +106,34 @@
   border-bottom: 1.5px solid #38bdf8;
 }
 
+.login-box .input-group--password input {
+  padding-right: 34px;
+}
+
+.login-box .password-toggle {
+  position: absolute;
+  right: 0;
+  top: 9px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 14px;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.login-box .password-toggle:hover {
+  color: #38bdf8;
+}
+
+.login-box .password-toggle:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .login-box .login-btn {
   width: 100%;
   padding: 14px;

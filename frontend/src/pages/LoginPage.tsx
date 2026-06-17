@@ -9,6 +9,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [idEmployee, setIdEmployee] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -59,10 +60,10 @@ export default function LoginPage() {
             <label htmlFor="username">ID працівника</label>
           </div>
 
-          <div className="input-group">
+          <div className="input-group input-group--password">
             <i className="fas fa-lock" aria-hidden="true" />
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -71,6 +72,15 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
             <label htmlFor="password">Пароль</label>
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? 'Приховати пароль' : 'Показати пароль'}
+              aria-pressed={showPassword}
+            >
+              <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" />
+            </button>
           </div>
 
           {error && <p className="error">{error}</p>}

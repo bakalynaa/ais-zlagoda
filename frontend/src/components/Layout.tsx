@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import FlowingMenu from './FlowingMenu';
+import StarBorder from './StarBorder';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
 
@@ -85,34 +86,55 @@ export default function Layout({ children }: Props) {
         </div>
 
         <div className="manager-actions">
-          <div className="manager-lang-toggle">
-            <button
-              type="button"
-              className={lang === 'eng' ? 'active' : ''}
-              onClick={() => setLang('eng')}
-            >
-              eng
-            </button>
-            <span>/</span>
-            <button
-              type="button"
-              className={lang === 'ukr' ? 'active' : ''}
-              onClick={() => setLang('ukr')}
-            >
-              ukr
-            </button>
-          </div>
+          <StarBorder
+            as="div"
+            className="star-border-container--lang"
+            speed="7s"
+            color="rgba(255, 252, 248, 0.9)"
+            colorSecondary="rgba(180, 150, 118, 0.7)"
+          >
+            <div className="manager-lang-toggle">
+              <button
+                type="button"
+                className={lang === 'eng' ? 'active' : ''}
+                onClick={() => setLang('eng')}
+              >
+                eng
+              </button>
+              <span>/</span>
+              <button
+                type="button"
+                className={lang === 'ukr' ? 'active' : ''}
+                onClick={() => setLang('ukr')}
+              >
+                ukr
+              </button>
+            </div>
+          </StarBorder>
 
-          <Link to="/profile" className="manager-pill-btn">{t('profile')}</Link>
-          <button
+          <StarBorder
+            as={Link}
+            to="/profile"
+            speed="6.5s"
+            color="rgba(255, 252, 248, 0.88)"
+            colorSecondary="rgba(196, 168, 130, 0.72)"
+          >
+            {t('profile')}
+          </StarBorder>
+
+          <StarBorder
+            as="button"
             type="button"
-            className="manager-menu-btn"
+            className="star-border-container--menu"
+            speed="5.5s"
+            color="rgba(255, 252, 248, 0.92)"
+            colorSecondary="rgba(172, 142, 110, 0.75)"
             onClick={() => setMenuOpen((value) => !value)}
             aria-expanded={menuOpen}
             aria-controls={menuId}
           >
             {menuOpen ? t('close') : t('menu')}
-          </button>
+          </StarBorder>
         </div>
       </header>
 

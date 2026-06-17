@@ -97,7 +97,14 @@ export default function ReportsPage() {
           </button>
         </div>
 
-        <div id="print-area">
+        <div
+          id="print-area"
+          className={
+            headers[reportType].length >= 7
+              ? 'reports-print-area reports-print-area--landscape'
+              : 'reports-print-area reports-print-area--portrait'
+          }
+        >
           <h2 className="reports-print-title">
             {t('reportTitle', { name: reportLabels[reportType] })}
           </h2>
@@ -135,16 +142,6 @@ export default function ReportsPage() {
             <span>{t('signatureDate')}</span>
           </div>
         </div>
-
-        <style>{`
-          @media print {
-            .no-print { display: none !important; }
-            .manager-topbar { display: none !important; }
-            .manager-side-menu { display: none !important; }
-            .manager-side-overlay { display: none !important; }
-            body { margin: 0; }
-          }
-        `}</style>
       </section>
     </Layout>
   );
