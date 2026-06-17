@@ -22,6 +22,7 @@ const TYPING_SPEED = 150;
 
 export interface IntroDomRefs {
   canvas: HTMLCanvasElement;
+  screenRoot: HTMLElement;
   startScreen: HTMLElement;
   wipeLeft: HTMLElement;
   wipeRight: HTMLElement;
@@ -38,7 +39,7 @@ export function initIntroAnimation(
   dom: IntroDomRefs,
   callbacks: IntroAnimationCallbacks,
 ): () => void {
-  const { canvas, startScreen, wipeLeft, wipeRight, endScreen, endText } = dom;
+  const { canvas, screenRoot, startScreen, wipeLeft, wipeRight, endScreen, endText } = dom;
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -267,6 +268,14 @@ export function initIntroAnimation(
     camera.lookAt(tmpLook);
   }
 
+  function setCinematicMode(mode: 'idle' | 'playing' | 'drive') {
+    screenRoot.classList.remove('intro-screen--playing', 'intro-screen--drive');
+    if (mode === 'playing') screenRoot.classList.add('intro-screen--playing');
+    if (mode === 'drive') {
+      screenRoot.classList.add('intro-screen--playing', 'intro-screen--drive');
+    }
+  }
+
   function setWipe(vw: number) {
     const w = `${vw.toFixed(2)}vw`;
     const glow = vw > 0.01 ? '0 0 60px 20px rgba(255, 255, 255, 0.6)' : 'none';
@@ -279,6 +288,7 @@ export function initIntroAnimation(
   function startEndText() {
     if (endTextStarted) return;
     endTextStarted = true;
+    setCinematicMode('idle');
     endScreen.classList.add('show');
 
     const brand = 'ZLAGODA';
@@ -306,6 +316,7 @@ export function initIntroAnimation(
   function beginIntro() {
     if (!ready || started) return;
     started = true;
+    setCinematicMode('playing');
     startScreen.classList.add('hidden');
     elapsed = 0;
     endLight.intensity = 0;
@@ -413,6 +424,7 @@ export function initIntroAnimation(
     } else if (elapsed < D_END) {
       const t = (elapsed - C_END) / T_DRIVE;
       const ease = easeInOut(t);
+      setCinematicMode('drive');
       cartGroup.position.x = -ease * 45;
       updateFalling(dt, cartGroup.position.x);
       endLight.intensity = ease * 18;

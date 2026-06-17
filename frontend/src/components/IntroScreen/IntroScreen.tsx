@@ -7,6 +7,7 @@ interface Props {
 }
 
 export default function IntroScreen({ onComplete }: Props) {
+  const screenRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const startScreenRef = useRef<HTMLDivElement>(null);
   const wipeLeftRef = useRef<HTMLDivElement>(null);
@@ -17,6 +18,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const [logoReady, setLogoReady] = useState(false);
 
   useEffect(() => {
+    const screenRoot = screenRef.current;
     const canvas = canvasRef.current;
     const startScreen = startScreenRef.current;
     const wipeLeft = wipeLeftRef.current;
@@ -24,12 +26,12 @@ export default function IntroScreen({ onComplete }: Props) {
     const endScreen = endScreenRef.current;
     const endText = endTextRef.current;
 
-    if (!canvas || !startScreen || !wipeLeft || !wipeRight || !endScreen || !endText) {
+    if (!screenRoot || !canvas || !startScreen || !wipeLeft || !wipeRight || !endScreen || !endText) {
       return;
     }
 
     return initIntroAnimation(
-      { canvas, startScreen, wipeLeft, wipeRight, endScreen, endText },
+      { screenRoot, canvas, startScreen, wipeLeft, wipeRight, endScreen, endText },
       {
         onReady: () => setIsReady(true),
         onExitReady: () => setLogoReady(true),
@@ -50,9 +52,17 @@ export default function IntroScreen({ onComplete }: Props) {
   }, [onComplete]);
 
   return (
-    <div className="intro-screen" role="presentation">
-      <canvas ref={canvasRef} />
-      <div className="intro-vignette" />
+    <div ref={screenRef} className="intro-screen" role="presentation">
+      <div className="intro-viewport">
+        <canvas ref={canvasRef} />
+        <div className="intro-vignette" />
+        <div className="intro-film-grade" aria-hidden="true" />
+        <div className="intro-film-grain" aria-hidden="true" />
+        <div className="intro-film-scanlines" aria-hidden="true" />
+      </div>
+
+      <div className="intro-letterbox intro-letterbox--top" aria-hidden="true" />
+      <div className="intro-letterbox intro-letterbox--bottom" aria-hidden="true" />
 
       <div ref={wipeLeftRef} className="intro-wipe intro-wipe-left" />
       <div ref={wipeRightRef} className="intro-wipe intro-wipe-right" />
