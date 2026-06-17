@@ -1,8 +1,6 @@
 import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
-import { devLogin } from '../utils/devLogin';
-import type { UserRole } from '../types';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -12,11 +10,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  function handleDevLogin(role: UserRole) {
-    devLogin(role);
-    navigate(role === 'Manager' ? '/manager' : '/cashier');
-  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -89,26 +82,6 @@ export default function LoginPage() {
             {loading ? 'Перевірка...' : 'Увійти'}
           </button>
         </form>
-
-        {import.meta.env.DEV && (
-          <div className="login-test">
-            <p>тест</p>
-            <button
-              type="button"
-              className="login-btn login-test-btn"
-              onClick={() => handleDevLogin('Manager')}
-            >
-              Увійти без кредів
-            </button>
-            <button
-              type="button"
-              className="login-btn login-test-btn-secondary"
-              onClick={() => handleDevLogin('Cashier')}
-            >
-              Увійти як касир
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

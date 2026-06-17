@@ -41,8 +41,9 @@ export default function CityInput({ value, onChange, style }: CityInputProps) {
   };
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="city-input">
       <input
+        className="city-input__field"
         style={style}
         value={value}
         onChange={handleChange}
@@ -50,31 +51,12 @@ export default function CityInput({ value, onChange, style }: CityInputProps) {
         placeholder="Місто"
       />
       {showSuggestions && suggestions.length > 0 && (
-        <ul style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          background: 'white',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          listStyle: 'none',
-          margin: 0,
-          padding: 0,
-          zIndex: 100,
-          maxHeight: '200px',
-          overflowY: 'auto',
-        }}>
-          {suggestions.map(city => (
+        <ul className="city-input__suggestions">
+          {suggestions.map((city) => (
             <li
               key={city}
+              className="city-input__option"
               onMouseDown={() => handleSelect(city)}
-              style={{
-                padding: '0.5rem',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'white')}
             >
               {city}
             </li>
