@@ -84,22 +84,6 @@ export default function ReceiptPrint({ receipt, onClose }: Props) {
           <p className="receipt-thanks">{t('receiptThankYou')}</p>
         </div>
       </div>
-
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #receipt-print-area, #receipt-print-area * { visibility: visible; }
-          #receipt-print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 1rem;
-          }
-          .no-print { display: none !important; }
-          .manager-topbar, .manager-side-menu, .manager-side-overlay { display: none !important; }
-        }
-      `}</style>
     </>
   );
 }
